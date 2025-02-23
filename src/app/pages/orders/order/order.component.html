@@ -1,0 +1,137 @@
+<div class="order-container">
+  <!-- Customer Information -->
+  <div class="order-info-section">
+    <div class="customer-details">
+      <mat-form-field appearance="outline">
+        <mat-label>Name</mat-label>
+        <input matInput [value]="order.name" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Phone</mat-label>
+        <input matInput [value]="order.phone" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput [value]="order.email" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input matInput [value]="order.date" readonly />
+      </mat-form-field>
+
+      <div class="payment-info">
+        <h6>
+          Ksh. {{ order.total }} {{ order.paymentMode }}
+          <span class="payment-code">{{ order.paymentCode }}</span>
+        </h6>
+      </div>
+    </div>
+
+    <!-- Delivery Information -->
+    <div class="delivery-details">
+      <mat-form-field appearance="outline">
+        <mat-label>County</mat-label>
+        <input matInput [value]="order.county" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sub-County</mat-label>
+        <input matInput [value]="order.subcounty" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Courier</mat-label>
+        <input matInput [value]="order.courier" readonly />
+      </mat-form-field>
+
+      <div class="description-section">
+        <span class="label">Description</span>
+        <p>{{ order.pickupDescription }}</p>
+      </div>
+
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="downloadReceipt(order.oid, order.uid)"
+        [disabled]="(downloading$ | async) === order.oid"
+      >
+        {{
+          (downloading$ | async) === order.oid
+            ? "Downloading..."
+            : "Download Receipt"
+        }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Products Section -->
+  <div class="products-section">
+    <div
+      *ngFor="let item of order.products; let i = index"
+      class="product-item"
+    >
+      <div class="product-details">
+        <div class="product-image">
+          <img [src]="item.img" [alt]="item.name" />
+          <h6
+            matTooltip="Click to view description"
+            (click)="openDescriptionDialog(item)"
+          >
+            {{ item.name }}
+          </h6>
+        </div>
+
+        <div class="product-info">
+          <p>Selected size: {{ item.size }}</p>
+          <p>
+            Selected color:
+            <span
+              *ngIf="item.color && item.color !== '-'"
+              class="color-dot"
+              [style.background-color]="item.color"
+            >
+            </span>
+            <span *ngIf="!item.color || item.color === '-'">-</span>
+          </p>
+          <p>Amount: {{ item.amount }}</p>
+          <p>Single Item Price: Ksh. {{ item.price }}</p>
+          <p>Total Price: Ksh. {{ item.price * item.amount }}</p>
+          <p>Status: {{ item.status }}</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div *ngIf="modifiable" class="action-buttons">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="handleSetStatus(order.oid, order.uid, item._id, 'PACKAGING')"
+          [disabled]="(updating$ | async) === 'PACKAGING'"
+        >
+          {{ (updating$ | async) === "PACKAGING" ? "..." : "Packaging" }}
+        </button>
+
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="handleSetStatus(order.oid, order.uid, item._id, 'DELIVERED')"
+          [disabled]="(updating$ | async) === 'DELIVERED'"
+        >
+          {{ (updating$ | async) === "DELIVERED" ? "..." : "Delivered" }}
+        </button>
+
+        <button
+          mat-raised-button
+          color="warn"
+          (click)="handleSetStatus(order.oid, order.uid, item._id, 'REFUNDED')"
+          [disabled]="(updating$ | async) === 'REFUNDED'"
+        >
+          {{ (updating$ | async) === "REFUNDED" ? "..." : "Refunded" }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

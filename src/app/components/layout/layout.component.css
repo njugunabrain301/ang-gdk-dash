@@ -1,0 +1,112 @@
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #333;
+  color: white;
+  height: 60px;
+  width: 100%;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  padding-right: 1rem;
+}
+
+.business-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-left: 1rem;
+  color: white;
+}
+
+.menu-button,
+.menu-button-right {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.logout-link {
+  margin-left: 1rem;
+  color: white;
+  text-decoration: none;
+}
+
+.content-wrapper {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #f1f1f1;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+.sidebar-menu {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  padding: 1rem;
+}
+
+.sidebar-menu a {
+  text-decoration: none;
+  color: #333;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* Hide the right-side menu button on larger screens */
+.menu-button-right {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Make the right-side menu button visible on smaller screens */
+  .menu-button-right {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    height: calc(100% - 60px);
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}

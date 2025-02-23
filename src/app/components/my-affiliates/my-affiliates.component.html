@@ -1,0 +1,38 @@
+<div class="bg-gray-100 p-4 m-1 rounded-lg">
+  <h6 class="font-bold mb-4">My Affiliates</h6>
+
+  <div class="bg-gray-200 rounded-lg mt-4 max-h-[300px] overflow-y-auto">
+    <div *ngIf="fetching" class="p-4 text-center">
+      <mat-spinner diameter="30"></mat-spinner>
+    </div>
+    <div
+      *ngIf="!fetching && affiliates.length === 0"
+      class="p-4 text-center text-gray-600"
+    >
+      No affiliates found
+    </div>
+
+    <div
+      *ngFor="let affiliate of affiliates; let i = index"
+      class="grid grid-cols-12 gap-4 p-2 border-b border-gray-300 items-center text-sm"
+    >
+      <div class="col-span-5">
+        <a [href]="affiliate.url" class="text-blue-600 hover:underline">
+          {{ affiliate.name }}
+        </a>
+      </div>
+      <div class="col-span-4">
+        {{ affiliate.viewsThisMonth }}
+      </div>
+      <div class="col-span-3">
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="revokeAffiliate(affiliate._id)"
+        >
+          <mat-icon>delete_forever</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+.content-wrapper {
+  padding: 16px;
+}
+
+.status-tabs {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  padding: 0;
+  margin: 0;
+
+  li {
+    padding: 7px;
+    padding-bottom: 2px;
+    width: 24.6%;
+    text-align: center;
+    font-size: 11pt;
+    background-color: #dbdbdb;
+    color: #808080;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    transition: 0.5s;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &.active {
+      background-color: dodgerblue;
+      color: white;
+    }
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.orders-content {
+  min-height: 200px;
+  padding: 16px;
+}
+
+mat-card {
+  margin-bottom: 20px;
+}

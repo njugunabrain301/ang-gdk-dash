@@ -1,0 +1,231 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold text-center mb-4">Point Of Sale</h2>
+  <div class="w-full border-b border-gray-200 mb-4">
+    <div class="flex w-full">
+      <button
+        class="flex-1 py-3 px-4 text-center relative"
+        [ngClass]="{
+          'text-blue-600 hover:text-blue-700': active === 'new',
+          'text-gray-500 hover:text-gray-700': active !== 'new'
+        }"
+        (click)="setActive('new')"
+      >
+        New
+        <div
+          class="absolute bottom-0 left-0 w-full h-0.5 transition-all"
+          [ngClass]="{
+            'bg-blue-600': active === 'new',
+            'bg-transparent': active !== 'new'
+          }"
+        ></div>
+      </button>
+      <button
+        class="flex-1 py-3 px-4 text-center relative"
+        [ngClass]="{
+          'text-blue-600 hover:text-blue-700': active === 'pending',
+          'text-gray-500 hover:text-gray-700': active !== 'pending'
+        }"
+        (click)="setActive('pending')"
+      >
+        Pending ({{ 0 }})
+        <div
+          class="absolute bottom-0 left-0 w-full h-0.5 transition-all"
+          [ngClass]="{
+            'bg-blue-600': active === 'pending',
+            'bg-transparent': active !== 'pending'
+          }"
+        ></div>
+      </button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="active === 'new'">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <div class="product-list overflow-y-auto max-h-[calc(100vh-200px)]">
+          <app-pos-product
+            *ngFor="let product of products"
+            [product]="product"
+            (addSelected)="addSelected($event)"
+          >
+          </app-pos-product>
+        </div>
+        <div class="mb-4">
+          <p>Items Total: Ksh. {{ totalPrice }}</p>
+          <p>Delivery Cost: Ksh. {{ deliveryLoc.price }}</p>
+          <p class="font-bold">
+            Total Cost: Ksh. {{ totalPrice + deliveryLoc.price }}
+          </p>
+        </div>
+      </div>
+
+      <div class="selected-products-section">
+        <div
+          class="selected-products overflow-y-auto max-h-[calc(50vh-100px)] mb-4"
+        >
+          <div
+            *ngFor="let prd of selected; let idx = index"
+            class="selected-product bg-gray-100 p-2 mb-2 rounded"
+          >
+            <p>{{ prd.name }}</p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center">
+                <span *ngIf="prd.size !== '-'" class="mr-2">{{
+                  prd.size
+                }}</span>
+                <div
+                  *ngIf="prd.color !== '-'"
+                  [style.background-color]="prd.color"
+                  class="w-4 h-4 rounded-full mr-2"
+                ></div>
+                <span *ngIf="prd.option !== '-'">{{ prd.option }}</span>
+              </div>
+              <div>
+                Ksh. {{ prd.price }}
+                <span class="mx-2 border-l pl-2">{{ prd.amount }}</span>
+                <button
+                  class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                  (click)="removeSelected(idx)"
+                >
+                  {{ prd.amount > 1 ? "-" : "x" }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="delivery-section mb-4">
+          <label class="block mb-2">
+            <input type="radio" [value]="false" [(ngModel)]="delivered" />
+            In-store pickup
+          </label>
+          <label class="block mb-2">
+            <input type="radio" [value]="true" [(ngModel)]="delivered" />
+            Delivered
+          </label>
+        </div>
+
+        <ng-container *ngIf="delivered">
+          <fieldset class="border rounded-lg p-4 mb-4">
+            <legend class="text-base px-2">Delivery Details</legend>
+
+            <!-- County and Subcounty row -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <mat-form-field class="w-full">
+                <mat-label>County</mat-label>
+                <mat-select
+                  [(ngModel)]="deliveryLoc.county"
+                  (selectionChange)="onCountyChange($event.value)"
+                >
+                  <mat-option
+                    *ngFor="let county of getUniqueCounties()"
+                    [value]="county"
+                  >
+                    {{ county }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>Sub-County</mat-label>
+                <mat-select
+                  [(ngModel)]="deliveryLoc.subcounty"
+                  (selectionChange)="onSubcountyChange($event.value)"
+                >
+                  <mat-option
+                    *ngFor="let subcounty of getUniqueSubcounties()"
+                    [value]="subcounty"
+                  >
+                    {{ subcounty }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <!-- Courier and Cost row -->
+            <div class="grid grid-cols-3 gap-4 mb-4">
+              <div class="col-span-2">
+                <mat-form-field class="w-full">
+                  <mat-label>Courier</mat-label>
+                  <mat-select
+                    [(ngModel)]="deliveryLoc.loc"
+                    (selectionChange)="onCourierChange($event.value)"
+                  >
+                    <mat-option
+                      *ngFor="let loc of getCourierLocations()"
+                      [value]="loc"
+                    >
+                      {{ loc.courier }} - {{ loc.description }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field class="w-full">
+                <mat-label>Delivery Cost</mat-label>
+                <input matInput type="number" [(ngModel)]="deliveryLoc.price" />
+                <span matPrefix class="pl-[5px]">Ksh.&nbsp;</span>
+              </mat-form-field>
+            </div>
+
+            <!-- Address specification -->
+            <mat-form-field class="w-full">
+              <mat-label>Street/Building/Floor/House No.</mat-label>
+              <input matInput [(ngModel)]="deliveryLoc.specification" />
+              <mat-hint>Please provide detailed delivery location</mat-hint>
+            </mat-form-field>
+          </fieldset>
+        </ng-container>
+
+        <!-- Client Information Section -->
+        <div class="grid gap-4 mb-4">
+          <mat-form-field class="w-full">
+            <mat-label>Client Name</mat-label>
+            <input matInput [(ngModel)]="client.name" placeholder="Optional" />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Client Email</mat-label>
+            <input matInput [(ngModel)]="client.email" placeholder="Optional" />
+            <mat-icon matSuffix>email</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Client Phone Number</mat-label>
+            <input matInput [(ngModel)]="client.phone" />
+            <mat-icon matSuffix>phone</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <label class="block mb-4">
+          <input type="checkbox" [(ngModel)]="client.send" /> Send invoice to
+          client
+        </label>
+
+        <button
+          (click)="sendInvoice()"
+          [disabled]="sendingInvoice"
+          class="w-full p-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+        >
+          {{ sendingInvoice ? "Sending..." : "Send Invoice" }}
+        </button>
+        <span *ngIf="sentInvoice" class="text-green-500 mt-2 block"
+          >Invoice Successfully Sent</span
+        >
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="active === 'pending'">
+    <div *ngFor="let inv of getPendingInvoices()">
+      <app-pos-invoice
+        *ngFor="let inv of getPendingInvoices()"
+        [invoice]="inv"
+        (updateInvoices)="setInvoices($event)"
+      >
+      </app-pos-invoice>
+    </div>
+  </ng-container>
+
+  <p *ngIf="posError" class="text-red-500 mt-4">{{ posError }}</p>
+</div>

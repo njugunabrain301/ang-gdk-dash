@@ -1,0 +1,210 @@
+<div class="product m-2 p-1 shadow-lg rounded-lg">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Image Upload Section -->
+    <div class="flex justify-center items-center flex-col">
+      <div
+        class="bg-gray-200 w-full h-full flex justify-center items-center cursor-pointer rounded-lg"
+        (click)="fileInput.click()"
+      >
+        <input
+          #fileInput
+          type="file"
+          class="hidden"
+          (change)="onImageSelected($event)"
+          accept="image/*"
+        />
+        <div *ngIf="!prod.img" class="text-center p-4">
+          <mat-icon class="w-24 h-24 text-gray-400"
+            >add_photo_alternate</mat-icon
+          >
+          <p class="text-gray-600">Click to upload image</p>
+        </div>
+        <img
+          *ngIf="prod.img"
+          [src]="getImageUrl()"
+          [alt]="prod.name"
+          class="object-contain w-full h-full"
+        />
+      </div>
+      <p class="text-xs mt-2 text-gray-600">
+        * Select the primary product image (Max 10MB)
+      </p>
+    </div>
+
+    <!-- Form Section -->
+    <div class="space-y-4">
+      <!-- Category Selection -->
+      <mat-form-field class="w-full">
+        <mat-label>Select Category</mat-label>
+        <mat-select
+          [(ngModel)]="prod.category"
+          (selectionChange)="prod.subcategory = ''"
+        >
+          <mat-option
+            *ngFor="let category of categories"
+            [value]="category.name"
+          >
+            {{ category.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Subcategory Selection -->
+      <mat-form-field
+        *ngIf="prod.category && prod.category !== 'Other'"
+        class="w-full"
+      >
+        <mat-label>Select Sub-category</mat-label>
+        <mat-select [(ngModel)]="prod.subcategory">
+          <mat-option
+            *ngFor="let subcat of getSubcategories()"
+            [value]="subcat"
+          >
+            {{ subcat }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Other Subcategory Input -->
+      <mat-form-field
+        *ngIf="prod.category === 'Other' || prod.subcategory === 'Other'"
+        class="w-full"
+      >
+        <mat-label>Enter Sub-category</mat-label>
+        <input matInput [(ngModel)]="otherSubCat" maxlength="50" />
+      </mat-form-field>
+
+      <!-- Vehicle Details -->
+      <ng-container *ngIf="prod.subcategory === 'Vehicles'">
+        <mat-form-field class="w-full">
+          <mat-label>Make</mat-label>
+          <input
+            matInput
+            [(ngModel)]="make"
+            (ngModelChange)="updateVehicleName()"
+            maxlength="50"
+          />
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+          <mat-label>Model</mat-label>
+          <input
+            matInput
+            [(ngModel)]="model"
+            (ngModelChange)="updateVehicleName()"
+            maxlength="50"
+          />
+        </mat-form-field>
+      </ng-container>
+
+      <!-- Product Title -->
+      <mat-form-field *ngIf="prod.subcategory !== 'Vehicles'" class="w-full">
+        <mat-label>Title</mat-label>
+        <input matInput [(ngModel)]="prod.name" maxlength="150" />
+      </mat-form-field>
+
+      <!-- Gender Selection for Fashion -->
+      <mat-form-field *ngIf="prod.category === 'Fashion'" class="w-full mt-4">
+        <mat-label>Select Gender</mat-label>
+        <mat-select [(ngModel)]="prod.gender">
+          <mat-option value="Male">Male</mat-option>
+          <mat-option value="Female">Female</mat-option>
+          <mat-option value="Unisex">Unisex</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Brand -->
+      <mat-form-field
+        *ngIf="prod.subcategory !== 'Vehicles'"
+        class="w-full mt-4"
+      >
+        <mat-label>Brand (Optional)</mat-label>
+        <input matInput [(ngModel)]="prod.brand" maxlength="50" />
+      </mat-form-field>
+
+      <!-- Condition -->
+      <div class="mt-4">
+        <label class="text-sm">{{
+          prod.subcategory === "Vehicles" ? "Condition" : "Condition (Optional)"
+        }}</label>
+        <mat-radio-group
+          [(ngModel)]="prod.condition"
+          class="flex flex-wrap gap-4 mt-2"
+        >
+          <mat-radio-button
+            *ngIf="prod.subcategory === 'Vehicles'"
+            value="Brand New"
+          >
+            Brand New
+          </mat-radio-button>
+          <mat-radio-button
+            *ngIf="prod.subcategory === 'Vehicles'"
+            value="Foreign Used"
+          >
+            Foreign Used
+          </mat-radio-button>
+          <mat-radio-button
+            *ngIf="prod.subcategory === 'Vehicles'"
+            value="Local Used"
+          >
+            Local Used
+          </mat-radio-button>
+          <mat-radio-button *ngIf="prod.subcategory !== 'Vehicles'" value="New">
+            New
+          </mat-radio-button>
+          <mat-radio-button
+            *ngIf="prod.subcategory !== 'Vehicles'"
+            value="Used"
+          >
+            Used
+          </mat-radio-button>
+          <mat-radio-button
+            *ngIf="prod.subcategory !== 'Vehicles'"
+            value="Refurbished"
+          >
+            Refurbished
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Price -->
+      <mat-form-field class="w-full">
+        <mat-label>Price</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="prod.price"
+          min="0"
+          max="99999999"
+        />
+        <span matPrefix>$&nbsp;</span>
+      </mat-form-field>
+
+      <!-- Description -->
+      <mat-form-field class="w-full">
+        <mat-label>Description</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="prod.description"
+          rows="4"
+          maxlength="5000"
+          class="resize-none"
+        ></textarea>
+      </mat-form-field>
+
+      <!-- Submit Button -->
+      <div class="flex justify-center">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="addProduct()"
+          [disabled]="isAdding"
+          class="px-8"
+        >
+          <span *ngIf="!isAdding">Add Product</span>
+          <span *ngIf="isAdding">{{ building }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

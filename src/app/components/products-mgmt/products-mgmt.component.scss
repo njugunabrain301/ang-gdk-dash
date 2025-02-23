@@ -1,0 +1,182 @@
+// General styles
+.product-wrapper {
+  .mat-expansion-panel {
+    border-radius: 8px;
+    margin-bottom: 16px;
+
+    &:not(.mat-expanded) {
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+    }
+  }
+}
+
+// Image gallery
+.image-gallery {
+  .gallery-item {
+    img {
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+
+      &.selected {
+        border-color: var(--primary-color);
+      }
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+// Landing pages
+.landing-pages-list {
+  .mat-list-item {
+    &.active {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+}
+
+// Notifications
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+
+  &.success-notification {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  &.error-notification {
+    background-color: #f44336;
+    color: white;
+  }
+
+  &.warning-notification {
+    background-color: #ff9800;
+    color: white;
+  }
+}
+
+// Form controls
+.mat-form-field {
+  &.mat-form-field-appearance-outline {
+    .mat-form-field-wrapper {
+      margin: 0;
+    }
+  }
+}
+
+// Chips
+.mat-chip {
+  &.mat-standard-chip {
+    min-height: 24px;
+    font-size: 12px;
+  }
+}
+
+// Buttons
+button {
+  &.mat-mini-fab {
+    width: 36px;
+    height: 36px;
+
+    .mat-icon {
+      font-size: 20px;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
+}
+
+// Custom snackbar styles
+::ng-deep .error-snackbar {
+  background: #f44336;
+  color: white;
+  border-radius: 4px;
+  padding: 14px 16px;
+  min-width: 300px;
+  max-width: 600px;
+  margin-bottom: 16px;
+
+  // Animation
+  animation: slideUp 0.3s ease-out, slideDown 0.3s ease-in forwards;
+  animation-delay: 0s, 4.7s; // Starts sliding down slightly before the 5s duration
+}
+
+.error-snackbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.error-message {
+  flex-grow: 1;
+  font-size: 14px;
+}
+
+// Animation keyframes
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+// Override Material button styles in snackbar
+::ng-deep .error-snackbar .mat-icon-button {
+  color: white;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}

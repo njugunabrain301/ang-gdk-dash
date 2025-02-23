@@ -1,0 +1,67 @@
+<div class="content-wrapper">
+  <div class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <mat-card>
+            <!-- Order Status Tabs -->
+            <ul class="status-tabs">
+              <li
+                *ngFor="
+                  let tab of [
+                    { id: 1, label: 'NEW', count: newOrders.length },
+                    { id: 2, label: 'PENDING', count: pending.length },
+                    { id: 3, label: 'DELIVERED', count: delivered.length },
+                    { id: 4, label: 'REFUNDED', count: refunded.length }
+                  ]
+                "
+                [class.active]="activeSection === tab.id"
+                (click)="openSection(tab.id)"
+              >
+                {{ tab.label }} ({{ tab.count }})
+              </li>
+            </ul>
+
+            <!-- Orders Content -->
+            <div
+              class="orders-content"
+              [ngStyle]="{ 'border-top': '5px solid dodgerblue' }"
+            >
+              <!-- OrdersList component will go here -->
+              <ng-container [ngSwitch]="activeSection">
+                <div *ngSwitchCase="1">
+                  <app-orders-list
+                    [orders]="newOrders"
+                    [modifiable]="true"
+                    (ordersUpdate)="updateOrders($event)"
+                  >
+                  </app-orders-list>
+                </div>
+                <div *ngSwitchCase="2">
+                  <app-orders-list
+                    [orders]="pending"
+                    [modifiable]="true"
+                    (ordersUpdate)="updateOrders($event)"
+                  >
+                  </app-orders-list>
+                </div>
+                <div *ngSwitchCase="3">
+                  <app-orders-list
+                    [orders]="delivered"
+                    [modifiable]="true"
+                    (ordersUpdate)="updateOrders($event)"
+                  >
+                  </app-orders-list>
+                </div>
+                <div *ngSwitchCase="4">
+                  <app-orders-list [orders]="refunded" [modifiable]="false">
+                  </app-orders-list>
+                </div>
+              </ng-container>
+            </div>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

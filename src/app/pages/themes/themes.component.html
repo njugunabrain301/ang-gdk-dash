@@ -1,0 +1,30 @@
+<div class="content-wrapper">
+  <div class="content">
+    <mat-card>
+      <div class="card-header">
+        <h2>Templates</h2>
+      </div>
+
+      <div class="card-content">
+        <div class="holiday-theme-toggle">
+          <span>Holiday Themes</span>
+          <mat-slide-toggle
+            [checked]="holidayTheme"
+            (change)="toggleHolidayThemes()"
+          >
+          </mat-slide-toggle>
+        </div>
+
+        <app-template
+          *ngFor="let template of templates; let i = index"
+          [template]="template"
+          [selectedTemplate]="selectedTemplate"
+          [selectedTheme]="selectedTheme"
+          (templateSelected)="setSelectedTemplate($event)"
+          (themeSelected)="setSelectedTheme($event)"
+        >
+        </app-template>
+      </div>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,326 @@
+<div class="p-6">
+  <!-- Loading State -->
+  <div
+    *ngIf="isInitializing"
+    class="flex justify-center items-center min-h-[200px]"
+  >
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Main Content -->
+  <mat-card class="bg-white shadow-lg w-full">
+    <!-- Header with Edit Controls -->
+    <div class="flex items-center justify-between p-4 border-b">
+      <h5 class="text-xl font-semibold">Profile Information</h5>
+      <div class="space-x-2">
+        <button
+          mat-raised-button
+          color="primary"
+          [class.bg-green-600]="!isEditing"
+          [class.bg-blue-600]="isEditing"
+          (click)="toggleEditing()"
+        >
+          <mat-icon>{{ isEditing ? "done" : "edit" }}</mat-icon>
+          {{ isEditing ? "Save" : "Edit" }}
+        </button>
+        <button
+          mat-raised-button
+          color="warn"
+          *ngIf="isEditing"
+          (click)="cancelEditing()"
+        >
+          <mat-icon>close</mat-icon>
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="p-6">
+      <div class="grid grid-cols-1 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-4">
+          <!-- Profile Image -->
+          <div class="flex items-center space-x-4">
+            <!-- <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+              <img
+                [src]="profile.icon instanceof File ? 
+                  (profile.icon | async) : 
+                  profile.icon"
+                alt="Profile"
+                class="w-full h-full object-cover"
+              />
+            </div> -->
+            <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+              <img
+                [src]="profile.icon"
+                alt="Profile"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 mb-2">Update Profile Image</p>
+              <input
+                type="file"
+                accept="image/*"
+                [disabled]="!isEditing"
+                (change)="onFileSelected($event)"
+                class="text-sm"
+              />
+            </div>
+          </div>
+
+          <!-- Basic Information -->
+          <mat-form-field class="w-full" appearance="fill">
+            <mat-label>Business Name</mat-label>
+            <input
+              matInput
+              [(ngModel)]="profile.name"
+              [disabled]="!isEditing"
+              [class.modified]="isFieldModified('name')"
+              maxlength="50"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full" appearance="fill">
+            <mat-label>Phone Number</mat-label>
+            <input
+              matInput
+              [(ngModel)]="profile.phone"
+              [disabled]="!isEditing"
+              [class.modified]="isFieldModified('phone')"
+              maxlength="20"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full" appearance="fill">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              [(ngModel)]="profile.email"
+              [disabled]="!isEditing"
+              [class.modified]="isFieldModified('email')"
+              maxlength="40"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full" appearance="fill">
+            <mat-label>Location</mat-label>
+            <input
+              matInput
+              [(ngModel)]="profile.location"
+              [disabled]="!isEditing"
+              [class.modified]="isFieldModified('location')"
+            />
+          </mat-form-field>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-4">
+          <!-- Business Summary -->
+          <mat-form-field class="w-full" appearance="fill">
+            <mat-label>Business Summary</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="profile.about"
+              [disabled]="!isEditing"
+              [class.modified]="isFieldModified('about')"
+              maxlength="500"
+              rows="3"
+            ></textarea>
+          </mat-form-field>
+
+          <!-- Show Price Toggle -->
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium">Show Price</span>
+              <mat-slide-toggle
+                [(ngModel)]="profile.showPrice"
+                [disabled]="!isEditing || (!mpesaTill && !mpesaPaybill)"
+                [class.modified]="isFieldModified('showPrice')"
+              ></mat-slide-toggle>
+            </div>
+            <p class="mt-2 text-sm text-gray-600">
+              {{
+                profile.showPrice
+                  ? "Clients will be able to check out and pay before submitting an order"
+                  : "Clients will submit an order of goods they are interested in and you will communicate the price back to them"
+              }}
+            </p>
+          </div>
+
+          <!-- Social Media Links -->
+          <div class="space-y-3">
+            <div class="flex items-center space-x-2">
+              <mat-icon class="text-blue-600">facebook</mat-icon>
+              <mat-form-field class="flex-1">
+                <mat-label>Facebook Link</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="profile.facebook"
+                  [disabled]="!isEditing"
+                />
+                <button
+                  *ngIf="profile.facebook && isEditing"
+                  matSuffix
+                  mat-icon-button
+                  (click)="profile.facebook = ''"
+                >
+                  <mat-icon class="text-red-500">delete</mat-icon>
+                </button>
+              </mat-form-field>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <mat-icon class="text-blue-400">twitter</mat-icon>
+              <mat-form-field class="flex-1">
+                <mat-label>Twitter Link</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="profile.twitter"
+                  [disabled]="!isEditing"
+                />
+                <button
+                  *ngIf="profile.twitter && isEditing"
+                  matSuffix
+                  mat-icon-button
+                  (click)="profile.twitter = ''"
+                >
+                  <mat-icon class="text-red-500">delete</mat-icon>
+                </button>
+              </mat-form-field>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <mat-icon class="text-pink-500">instagram</mat-icon>
+              <mat-form-field class="flex-1">
+                <mat-label>Instagram Link</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="profile.instagram"
+                  [disabled]="!isEditing"
+                />
+                <button
+                  *ngIf="profile.instagram && isEditing"
+                  matSuffix
+                  mat-icon-button
+                  (click)="profile.instagram = ''"
+                >
+                  <mat-icon class="text-red-500">delete</mat-icon>
+                </button>
+              </mat-form-field>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <mat-icon class="text-red-500">google</mat-icon>
+              <mat-form-field class="flex-1">
+                <mat-label>Google Business Link</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="profile.google"
+                  [disabled]="!isEditing"
+                />
+                <button
+                  *ngIf="profile.google && isEditing"
+                  matSuffix
+                  mat-icon-button
+                  (click)="profile.google = ''"
+                >
+                  <mat-icon class="text-red-500">delete</mat-icon>
+                </button>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <!-- Response Time -->
+        <div class="space-y-4">
+          <h6 class="text-lg font-medium">Response Time</h6>
+          <p class="text-sm text-gray-600">
+            How long does it take you to respond to a message from the client?
+          </p>
+          <div class="flex items-center space-x-4">
+            <mat-form-field>
+              <mat-label>Time Unit</mat-label>
+              <mat-select
+                [(ngModel)]="profile.responseTime.unit"
+                [disabled]="!isEditing"
+              >
+                <mat-option value="hours">Hours</mat-option>
+                <mat-option value="days">Days</mat-option>
+                <mat-option value="weeks">Weeks</mat-option>
+                <mat-option value="months">Months</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Amount</mat-label>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="profile.responseTime.amount"
+                [disabled]="!isEditing"
+              />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Working Hours -->
+        <div class="space-y-4">
+          <h6 class="text-lg font-medium">Working Hours</h6>
+          <mat-form-field class="w-full">
+            <mat-label>Select Working Hours</mat-label>
+            <mat-select
+              [(ngModel)]="profile.workingHours"
+              [disabled]="!isEditing"
+            >
+              <mat-option value="Monday - Saturday, 8AM - 8PM">
+                Monday - Saturday, 8AM - 8PM
+              </mat-option>
+              <mat-option
+                value="Monday - Saturday, 8AM - 8PM, Sundays 2PM - 7PM"
+              >
+                Monday - Saturday, 8AM - 8PM, Sundays 2PM - 7PM
+              </mat-option>
+              <mat-option
+                value="Monday - Friday, 8AM - 5PM, Weekends 9AM - 4PM"
+              >
+                Monday - Friday, 8AM - 5PM, Weekends 9AM - 4PM
+              </mat-option>
+              <mat-option
+                value="Monday - Friday, 8AM - 7PM, Weekends 11AM - 6PM"
+              >
+                Monday - Friday, 8AM - 7PM, Weekends 11AM - 6PM
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Detailed About Section -->
+      <div class="mt-6">
+        <mat-form-field class="w-full">
+          <mat-label>Detailed Business Description</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="profile.aboutDetailed"
+            [disabled]="!isEditing"
+            [class.modified]="isFieldModified('aboutDetailed')"
+            maxlength="5000"
+            rows="6"
+          ></textarea>
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card>
+</div>
+
+<!-- Add some custom styles for modified fields -->
+<style>
+  .modified {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+</style>

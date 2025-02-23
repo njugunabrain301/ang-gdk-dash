@@ -1,0 +1,81 @@
+<div class="ai-modal">
+  <!-- Header -->
+  <div class="modal-header">
+    <h2 mat-dialog-title>Generate AI Description</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <!-- Description Input -->
+    <div class="description-section">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Description</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="AIResponse"
+          rows="6"
+          class="bg-gray-100"
+        ></textarea>
+      </mat-form-field>
+    </div>
+
+    <!-- Preview Section -->
+    <div class="preview-section">
+      <h3 class="font-bold mb-2">Preview</h3>
+      <div
+        class="preview-content bg-gray-100 p-4 rounded max-h-[200px] overflow-y-auto"
+      >
+        <ng-container
+          *ngIf="!containsUnwantedHtmlTags(AIResponse); else unwantedTags"
+        >
+          <div [innerHTML]="AIResponse" class="ul-content text-left"></div>
+        </ng-container>
+        <ng-template #unwantedTags>
+          <p class="text-red-500">The text contains disallowed html tags</p>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Instructions Input -->
+    <div class="instructions-section mt-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Additional Instructions</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="instructions"
+          rows="3"
+          class="bg-gray-100"
+        ></textarea>
+      </mat-form-field>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="AIError" class="text-red-500 mt-2">
+      {{ AIError }}
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="fetchAIDesc()"
+      [disabled]="generating"
+    >
+      <mat-icon *ngIf="generating" class="mr-2">
+        <mat-spinner diameter="20" color="accent"></mat-spinner>
+      </mat-icon>
+      <span>{{ generating ? "Generating..." : "Generate" }}</span>
+    </button>
+    <button
+      mat-raised-button
+      color="accent"
+      (click)="useDescription()"
+      [disabled]="!AIResponse || generating"
+    >
+      Use
+    </button>
+  </mat-dialog-actions>
+</div>

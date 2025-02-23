@@ -1,0 +1,100 @@
+<div class="product-container m-2 p-4 rounded-lg shadow-lg">
+  <!-- Search Section -->
+  <div class="flex justify-center mb-4">
+    <mat-form-field appearance="outline" class="w-full max-w-md">
+      <mat-label>Search</mat-label>
+      <input
+        matInput
+        #searchInput
+        [(ngModel)]="search"
+        placeholder="Search products..."
+        (keyup.enter)="applySearch()"
+      />
+    </mat-form-field>
+  </div>
+
+  <!-- Products List -->
+  <div
+    #productContainer
+    class="products-list bg-gray-100 rounded p-4 border border-gray-300 overflow-y-auto"
+    style="max-height: 70vh"
+  >
+    <!-- Loading State -->
+    <div *ngIf="products.length === 0 && fetching" class="text-center py-4">
+      Fetching products...
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="products.length === 0 && !fetching" class="text-center py-4">
+      No products found.
+    </div>
+
+    <!-- Products Grid -->
+    <div *ngFor="let product of products" class="product-item mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <!-- Product Image -->
+        <div class="md:col-span-3">
+          <img
+            [src]="resizeCardImage(product.img)"
+            [alt]="product.name"
+            class="w-full aspect-[4/3] object-cover rounded"
+          />
+        </div>
+
+        <!-- Product Details -->
+        <div class="md:col-span-9">
+          <div class="flex flex-col h-full p-2">
+            <!-- Product Name -->
+            <a
+              [href]="
+                product.owner.customUrl ||
+                product.owner.url + '/filter/item/' + product._id
+              "
+              class="text-gray-800 text-lg hover:text-blue-600"
+            >
+              {{ product.name }}
+            </a>
+
+            <!-- Price and Commission -->
+            <div class="text-sm mt-2">
+              <span>Price: Ksh. {{ product.price }}</span>
+              <span class="ml-4"
+                >Commission: Ksh. {{ product.commission }}</span
+              >
+            </div>
+
+            <!-- Owner -->
+            <div class="text-sm mt-2">
+              Owner:
+              <a
+                [href]="product.owner.customUrl || product.owner.url"
+                class="text-gray-700 hover:text-blue-600"
+              >
+                {{ product.owner.name }}
+              </a>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-2">
+              <button
+                mat-raised-button
+                color="primary"
+                [disabled]="copying.includes(product._id)"
+                (click)="addToMyList(product._id)"
+              >
+                {{
+                  copying.includes(product._id) ? "Adding..." : "Add To My List"
+                }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading More Indicator -->
+    <div *ngIf="fetching && products.length > 0" class="text-center py-4">
+      Loading more products...
+    </div>
+  </div>
+</div>

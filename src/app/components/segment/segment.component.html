@@ -1,0 +1,307 @@
+<div class="segment-wrapper bg-gray-200 m-1 rounded-lg">
+  <!-- Header Section -->
+  <div class="flex justify-between items-center mb-4 flex-wrap bg-gray-300 p-2">
+    <div class="flex items-center">
+      <span class="text-sm">Type: {{ camelCase(article.type) }}</span>
+      <button mat-icon-button (click)="toggleVisibility.emit(article._id)">
+        <mat-icon [class.text-blue-500]="article.visibility">
+          {{ article.visibility ? "visibility" : "visibility_off" }}
+        </mat-icon>
+      </button>
+    </div>
+
+    <!-- Movement Controls -->
+    <div class="flex items-center gap-1 lg:gap-2">
+      <button
+        mat-icon-button
+        color="primary"
+        (click)="toTop()"
+        [disabled]="idx === 0"
+      >
+        <mat-icon>keyboard_double_arrow_up</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        color="primary"
+        (click)="moveUp()"
+        [disabled]="idx === 0"
+      >
+        <mat-icon>keyboard_arrow_up</mat-icon>
+      </button>
+      <span>{{ idx }}</span>
+      <button mat-icon-button color="primary" (click)="moveDown()">
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+      <button mat-icon-button color="primary" (click)="toBottom()">
+        <mat-icon>keyboard_double_arrow_down</mat-icon>
+      </button>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-1 lg:gap-2">
+      <button mat-icon-button color="primary" (click)="toggleUpdate()">
+        <mat-icon>{{ update ? "done" : "edit" }}</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="cancelChanges()"
+        [disabled]="!update"
+      >
+        <mat-icon>undo</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="deleteArticle.emit(article._id)"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Content Section -->
+  <div class="content-section p-2">
+    <ng-container *ngFor="let key of keys">
+      <!-- Image Content -->
+      <div *ngIf="key === 'image'" class="mb-4">
+        <div class="flex flex-col gap-2">
+          <img
+            *ngIf="mArticle.content.image"
+            [src]="getImageUrl()"
+            class="max-w-[200px] rounded"
+          />
+          <div *ngIf="update" class="flex items-center gap-2">
+            <input
+              type="file"
+              #fileInput
+              hidden
+              (change)="onImageSelected($event)"
+              accept="image/*"
+            />
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="fileInput.click()"
+            >
+              <mat-icon>add_a_photo</mat-icon>
+              Choose Image
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- List Content -->
+      <div *ngIf="key === 'items'" class="mb-4">
+        <!-- Add New Item Form -->
+        <div *ngIf="update" class="bg-gray-100 p-3 rounded mb-3">
+          <div class="flex items-center gap-2">
+            <mat-form-field class="flex-grow">
+              <mat-label>New List Item</mat-label>
+              <input matInput [(ngModel)]="newListItem" maxlength="100" />
+            </mat-form-field>
+            <button
+              mat-icon-button
+              color="primary"
+              (click)="addListItem()"
+              [disabled]="!newListItem || mArticle.content.items?.length >= 5"
+            >
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- List Items -->
+        <div class="space-y-2">
+          <div
+            *ngFor="let item of mArticle.content.items; let i = index"
+            class="flex items-center gap-2 p-2 bg-gray-50 rounded"
+          >
+            <span class="flex-grow">{{ item }}</span>
+            <button
+              *ngIf="update"
+              mat-icon-button
+              color="warn"
+              (click)="removeListItem(i)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Counter Content -->
+      <div *ngIf="key === 'values' && article.type === 'counter'" class="mb-4">
+        <!-- Add New Counter -->
+        <div *ngIf="update" class="bg-gray-100 p-3 rounded mb-3">
+          <div class="flex gap-2">
+            <mat-form-field class="flex-grow">
+              <mat-label>Title</mat-label>
+              <input matInput [(ngModel)]="newCounterItem.title" />
+            </mat-form-field>
+            <mat-form-field class="flex-grow">
+              <mat-label>Value</mat-label>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="newCounterItem.value"
+              />
+            </mat-form-field>
+            <button
+              mat-icon-button
+              color="primary"
+              (click)="addCounterItem()"
+              [disabled]="
+                !newCounterItem.title ||
+                !newCounterItem.value ||
+                mArticle.content.values?.length >= 2
+              "
+            >
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Counter Items -->
+        <div class="space-y-2">
+          <div
+            *ngFor="let item of mArticle.content.values; let i = index"
+            class="flex items-center gap-2 p-2 bg-gray-50 rounded"
+          >
+            <div class="flex-grow">
+              <div class="font-medium">{{ item.title }}</div>
+              <div class="text-gray-600">{{ item.value }}</div>
+            </div>
+            <button
+              *ngIf="update"
+              mat-icon-button
+              color="warn"
+              (click)="removeCounterItem(i)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carousel Content -->
+      <div *ngIf="key === 'values' && article.type === 'carousel'" class="mb-4">
+        <!-- Add New Carousel Item -->
+        <div *ngIf="update" class="bg-gray-100 p-3 rounded mb-3">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2">
+              <input
+                type="file"
+                #carouselFileInput
+                hidden
+                (change)="onCarouselImageSelected($event)"
+                accept="image/*"
+              />
+              <button
+                mat-raised-button
+                [disabled]="addingCarousel"
+                (click)="carouselFileInput.click()"
+              >
+                <mat-icon>add_a_photo</mat-icon>
+                Choose Image
+              </button>
+            </div>
+            <mat-form-field>
+              <mat-label>Title</mat-label>
+              <input matInput [(ngModel)]="newCarouselItem.title" />
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Description</mat-label>
+              <textarea
+                matInput
+                [(ngModel)]="newCarouselItem.description"
+              ></textarea>
+            </mat-form-field>
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="addCarouselItem()"
+              [disabled]="
+                addingCarousel ||
+                (!newCarouselItem.image &&
+                  !newCarouselItem.description &&
+                  !newCarouselItem.title)
+              "
+            >
+              Add Item
+            </button>
+          </div>
+        </div>
+
+        <!-- Carousel Items -->
+        <div class="space-y-3">
+          <div
+            *ngFor="let item of mArticle.content.values; let i = index"
+            class="flex gap-3 p-3 bg-gray-50 rounded"
+          >
+            <img
+              *ngIf="item.image"
+              [src]="item.image"
+              class="w-24 h-24 object-cover rounded"
+            />
+            <div class="flex-grow">
+              <div *ngIf="item.title" class="font-medium">{{ item.title }}</div>
+              <div *ngIf="item.description" class="text-gray-600">
+                {{ item.description }}
+              </div>
+            </div>
+            <button
+              *ngIf="update"
+              mat-icon-button
+              color="warn"
+              (click)="removeCarouselItem(i)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Content -->
+      <div *ngIf="key === 'videoId'" class="mb-4">
+        <mat-form-field *ngIf="update" class="w-full">
+          <mat-label>YouTube Video ID</mat-label>
+          <input matInput [(ngModel)]="mArticle.content[key]" />
+        </mat-form-field>
+
+        <div *ngIf="mArticle.content[key]" class="aspect-video">
+          <iframe
+            class="w-full h-full"
+            [src]="getSafeUrl(mArticle.content[key])"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+
+      <!-- Default Content (Text) -->
+      <div
+        *ngIf="!['image', 'items', 'values', 'videoId'].includes(key)"
+        class="mb-4"
+      >
+        <mat-form-field *ngIf="update" class="w-full">
+          <mat-label>{{ camelCase(key) }}</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="mArticle.content[key]"
+            [rows]="key === 'description' ? 4 : 1"
+          >
+          </textarea>
+        </mat-form-field>
+
+        <div *ngIf="!update">
+          <div class="font-medium mb-1">{{ camelCase(key) }}</div>
+          <div class="text-gray-600 break-words">
+            {{ mArticle.content[key] }}
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

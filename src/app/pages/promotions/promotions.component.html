@@ -1,0 +1,40 @@
+<div class="content-wrapper">
+  <!-- Header -->
+  <div class="content-header">
+    <h1>Promotions</h1>
+  </div>
+
+  <!-- Main content -->
+  <div class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <mat-card>
+            <!-- Card Content -->
+            <mat-card-content class="p-2">
+              <div class="flex flex-wrap lg:flex-nowrap justify-center gap-2">
+                <!-- Tags Component (to be implemented) -->
+                <app-promotion-tags
+                  [promotions]="promotions"
+                  (promotionsChange)="updatePromotions($event)"
+                >
+                </app-promotion-tags>
+
+                <!-- Video Component (to be implemented) -->
+                <app-promotion-video
+                  [promotions]="promotions"
+                  (promotionsChange)="updatePromotions($event)"
+                >
+                </app-promotion-video>
+
+                <!-- Marketing Component (commented out as in original)
+                <app-promotion-marketing></app-promotion-marketing>
+                -->
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

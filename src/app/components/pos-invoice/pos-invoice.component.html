@@ -1,0 +1,85 @@
+<div
+  class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-200 rounded-lg p-4 mb-2"
+>
+  <!-- Left Column - Products -->
+  <div>
+    <div class="max-h-[250px] overflow-y-auto rounded-lg">
+      <div
+        *ngFor="let prd of invoice.items; let idx = index"
+        class="bg-gray-100 p-3 mb-2 rounded-lg text-base"
+      >
+        <p class="w-full">{{ prd.name }}</p>
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <span *ngIf="prd.size !== '-'" class="mr-2">{{ prd.size }}</span>
+            <div
+              *ngIf="prd.color !== '-'"
+              [style.backgroundColor]="prd.color"
+              class="w-5 h-5 rounded-full mr-2"
+            ></div>
+            <span *ngIf="prd.option !== '-'">{{ prd.selectedOption }}</span>
+          </div>
+          <div>
+            Ksh. {{ prd.price * prd.amount }}
+            <span class="mx-4 border-l pl-4">{{ prd.amount }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column - Invoice Details -->
+  <div class="text-base">
+    <div class="flex justify-between mb-2">
+      <span>Invoice ID: {{ invoice._id.slice(16).toUpperCase() }}</span>
+      <span class="mr-5">{{ invoice.date }}</span>
+    </div>
+
+    <div class="flex flex-wrap mb-2">
+      <span class="mr-5">Phone: {{ invoice.phone }}</span>
+      <span>Email: {{ invoice.email }}</span>
+    </div>
+
+    <div class="flex justify-between items-center mb-2">
+      <span>Total: Ksh. {{ invoice.total }}</span>
+      <button mat-icon-button (click)="downloadReceipt(invoice._id)">
+        <mat-icon *ngIf="downloading !== invoice._id">download</mat-icon>
+        <span *ngIf="downloading === invoice._id">Downloading...</span>
+      </button>
+    </div>
+
+    <mat-form-field class="w-full mt-4">
+      <mat-label>Payment Mode</mat-label>
+      <mat-select [(ngModel)]="paymentMode">
+        <mat-option value="MPesa Paybill">MPesa Paybill</mat-option>
+        <mat-option value="MPesa Till">MPesa Till</mat-option>
+        <mat-option value="MPesa Express">MPesa Express</mat-option>
+        <mat-option value="Cash">Cash</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="w-full">
+      <mat-label>Payment Code</mat-label>
+      <input matInput [(ngModel)]="paymentCode" />
+    </mat-form-field>
+
+    <div class="flex justify-between p-2">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="payInvoice()"
+        [disabled]="isProcessing"
+      >
+        {{ isProcessing ? "Processing..." : "Paid" }}
+      </button>
+      <button
+        mat-raised-button
+        color="warn"
+        (click)="cancelInvoice()"
+        [disabled]="isProcessing"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>

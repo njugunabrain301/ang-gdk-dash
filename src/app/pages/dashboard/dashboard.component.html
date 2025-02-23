@@ -1,0 +1,128 @@
+<div class="p-6">
+  <!-- <label class="text-2xl mb-6">Dashboard</label> -->
+
+  <!-- Action Buttons -->
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <button
+      class="w-full !bg-blue-500 !text-white text-center !py-1"
+      (click)="openPosDialog()"
+    >
+      Point Of Sale
+    </button>
+    <a class="w-full !bg-blue-500 !text-white text-center !py-1" href="/orders">
+      Orders {{ orders > 0 ? "(" + orders + ")" : "" }}
+    </a>
+    <a
+      class="w-full !bg-blue-500 !text-white text-center !py-1"
+      href="./billing?section=invoices"
+    >
+      My Bills {{ invoices > 0 ? "(" + invoices + ")" : "" }}
+    </a>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <mat-card class="!bg-blue-100">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Website Visits</p>
+            <h2 class="text-xl font-bold">{{ statistics.visits || "-" }}</h2>
+          </div>
+          <mat-icon class="text-blue-500">store</mat-icon>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Website Visits this month</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="!bg-green-100">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Registered Users</p>
+            <h2 class="text-xl font-bold">{{ statistics.users || "-" }}</h2>
+          </div>
+          <mat-icon class="text-green-500">person_add</mat-icon>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Total Registered Users</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="!bg-yellow-100">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Revenue</p>
+            <h2 class="text-xl font-bold">
+              {{ statistics.revenue ? "Ksh. " + statistics.revenue : "-" }}
+            </h2>
+          </div>
+          <mat-icon class="text-yellow-500">attach_money</mat-icon>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Sales made this month</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="!bg-purple-100">
+      <mat-card-content>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">Orders</p>
+            <h2 class="text-xl font-bold">{{ statistics.orders || "-" }}</h2>
+          </div>
+          <mat-icon class="text-purple-500">shop_two</mat-icon>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Total Orders This month</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Website Visits</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <canvas
+          baseChart
+          [data]="visits"
+          [options]="chartOptions"
+          [type]="'line'"
+        >
+        </canvas>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Monthly Sales</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <canvas
+          baseChart
+          [data]="revenueData"
+          [options]="chartOptions"
+          [type]="'line'"
+        >
+        </canvas>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Registered Users</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <canvas
+          baseChart
+          [data]="growth"
+          [options]="chartOptions"
+          [type]="'line'"
+        >
+        </canvas>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

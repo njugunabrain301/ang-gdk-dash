@@ -1,0 +1,10 @@
+<div class="orders-list-container">
+  <div *ngFor="let order of orders" [attr.key]="order.oid + '-' + order.status">
+    <!-- Order component will go here -->
+    <app-order
+      [order]="order"
+      [modifiable]="modifiable"
+      (orderUpdate)="ordersUpdate.emit($event)"
+    ></app-order>
+  </div>
+</div>

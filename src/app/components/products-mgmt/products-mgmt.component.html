@@ -1,0 +1,1092 @@
+<!-- Main Container -->
+<div class="product-wrapper">
+  <!-- Loading Overlay -->
+  <div
+    *ngIf="isProgress === 'Saving'"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+  >
+    <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <mat-spinner [diameter]="50"></mat-spinner>
+      <span class="mt-4 text-lg font-medium">Saving changes...</span>
+    </div>
+  </div>
+
+  <div
+    *ngIf="isProgress === 'Loading'"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+  >
+    <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <mat-spinner [diameter]="50"></mat-spinner>
+      <span class="mt-4 text-lg font-medium">Loading product...</span>
+    </div>
+  </div>
+
+  <ng-container *ngIf="storeData.length > 0; else noProducts">
+    <mat-card class="product min-w-[320px] rounded-[10px] m-2">
+      <!-- Top Navigation and Filters Section -->
+      <div class="flex border-b">
+        <!-- Filters Section -->
+        <div class="filters-section p-4 border-r min-w-[320px] bg-gray-50">
+          <h6 class="text-lg font-medium text-gray-700 mb-4">Filters</h6>
+
+          <!-- Quick Filters -->
+          <div class="mb-6">
+            <p class="text-sm text-gray-600 mb-2">Quick Filters</p>
+            <div class="feature-filters flex gap-3">
+              <button
+                mat-stroked-button
+                [class.active-filter]="listFilters.includes('Slider')"
+                (click)="toggleFilter('Slider')"
+                class="filter-button"
+              >
+                <mat-icon class="mr-2">view_carousel</mat-icon>
+                Primary Products
+              </button>
+              <button
+                mat-stroked-button
+                [class.active-filter]="listFilters.includes('Home Page')"
+                (click)="toggleFilter('Home Page')"
+                class="filter-button"
+              >
+                <mat-icon class="mr-2">home</mat-icon>
+                Secondary Products
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Input -->
+          <div class="mb-6">
+            <p class="text-sm text-gray-600 mb-2">Search</p>
+            <mat-form-field class="w-full" appearance="outline">
+              <mat-icon matPrefix class="text-gray-400">search</mat-icon>
+              <input
+                matInput
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="filterProducts()"
+                placeholder="Search products"
+              />
+            </mat-form-field>
+          </div>
+
+          <!-- Category Filters -->
+          <div class="mb-6">
+            <p class="text-sm text-gray-600 mb-2">Categories</p>
+            <mat-form-field class="w-full mb-3" appearance="outline">
+              <mat-select [(ngModel)]="sCat" placeholder="Select Category">
+                <mat-option
+                  *ngFor="let category of categories"
+                  [value]="category"
+                >
+                  {{ category }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field class="w-full" appearance="outline">
+              <mat-select [(ngModel)]="sSub" placeholder="Select Subcategory">
+                <mat-option *ngFor="let sub of mySubs" [value]="sub">
+                  {{ sub }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Clear Filters Button -->
+          <button
+            mat-stroked-button
+            color="warn"
+            class="w-full"
+            (click)="clearFilters()"
+          >
+            <mat-icon class="mr-2">clear_all</mat-icon>
+            Clear All Filters
+          </button>
+        </div>
+
+        <!-- Product List -->
+        <div class="product-list-section p-4 flex-grow bg-white">
+          <h6 class="text-lg font-medium text-gray-700 mb-4">Products</h6>
+          <div class="product-list-container">
+            <div class="flex flex-col">
+              <a
+                *ngFor="let item of tempData"
+                (click)="setNextItem(item._id)"
+                [class.selected-product]="item._id === prod._id"
+                [class.disabled]="hasUnsavedChanges && item._id !== prod._id"
+                class="product-link"
+              >
+                {{ item.name }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <ng-container>
+        <div *ngIf="isAffiliateProduct">
+          <p class="text-lg font-medium text-gray-700 mb-4 affiliate-badge">
+            Affiliate Product
+          </p>
+        </div>
+        <mat-tab-group
+          [(selectedIndex)]="selectedTab"
+          (selectedIndexChange)="handleTabChange($event)"
+          class="p-4"
+        >
+          <!-- Basic Info Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="mr-2">info</mat-icon>
+              Basic Info
+            </ng-template>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+              <!-- Left Column - Images -->
+              <div class="product-images">
+                <!-- Main Image -->
+                <div class="relative mb-4">
+                  <img
+                    [src]="currentImage"
+                    alt="Product Image"
+                    class="w-full rounded-lg shadow"
+                  />
+                </div>
+
+                <!-- Extra Images Section -->
+                <div class="extra-images mt-4">
+                  <mat-label
+                    class="block mb-2"
+                    *ngIf="remainingImagesCount > 0"
+                  >
+                    Extra Images ({{ remainingImagesCount }} remaining)
+                  </mat-label>
+
+                  <div class="flex flex-wrap gap-4">
+                    <div class="relative">
+                      <img
+                        [src]="prod ? prod.img : ''"
+                        class="w-24 h-24 object-cover rounded border hover:opacity-75 transition-opacity"
+                        [alt]="prod ? prod.name : ''"
+                        (click)="toggleImage(prod.img)"
+                      />
+
+                      <button
+                        mat-mini-fab
+                        color="primary"
+                        class="absolute bottom-2 right-2"
+                        (click)="fileInput.click()"
+                      >
+                        <mat-icon>add_a_photo</mat-icon>
+                      </button>
+                      <input
+                        #fileInput
+                        type="file"
+                        hidden
+                        (change)="onImageSelected($event)"
+                        accept="image/*"
+                      />
+                    </div>
+                    <!-- Existing Images -->
+                    <div
+                      *ngFor="
+                        let image of prod ? prod.images : [];
+                        trackBy: trackByImageId
+                      "
+                      class="relative"
+                    >
+                      <img
+                        [src]="parseImageUrl(image.img)"
+                        class="w-24 h-24 object-cover rounded border hover:opacity-75 transition-opacity"
+                        [alt]="prod.name"
+                        (click)="toggleImage(image.img)"
+                      />
+                      <button
+                        mat-mini-fab
+                        class="absolute bottom-2 right-2 bg-red-500 text-white"
+                        (click)="openImageDeleteDialog(image._id)"
+                        color="error"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+
+                    <!-- Add Image Button (only show if less than 4 images) -->
+                    <div
+                      *ngIf="remainingImagesCount > 0"
+                      class="w-24 h-24 border-2 border-dashed rounded flex items-center justify-center cursor-pointer relative"
+                      (click)="fileInput.click()"
+                    >
+                      <!-- Rest of the upload button content remains the same -->
+                      <ng-container
+                        *ngIf="
+                          uploadProgress > 0 && uploadProgress < 100;
+                          else addImageIcon
+                        "
+                      >
+                        <div
+                          class="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-90"
+                        >
+                          <div class="relative">
+                            <mat-progress-spinner
+                              [diameter]="50"
+                              [strokeWidth]="4"
+                              [value]="uploadProgress"
+                              mode="determinate"
+                              color="primary"
+                            >
+                            </mat-progress-spinner>
+                            <span
+                              class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium"
+                            >
+                              {{ uploadProgress }}%
+                            </span>
+                          </div>
+                        </div>
+                      </ng-container>
+
+                      <ng-template #addImageIcon>
+                        <mat-icon class="text-gray-400"
+                          >add_photo_alternate</mat-icon
+                        >
+                      </ng-template>
+
+                      <input
+                        #fileInput
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        (change)="onImageSelected($event)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Upload Progress -->
+                  <mat-progress-bar
+                    *ngIf="uploadProgress > 0 && uploadProgress < 100"
+                    mode="determinate"
+                    [value]="uploadProgress"
+                    class="mt-2"
+                  >
+                  </mat-progress-bar>
+                </div>
+              </div>
+
+              <!-- Right Column - Basic Info Form -->
+              <div class="basic-info-form space-y-4">
+                <!-- Name and Price Section -->
+                <div class="grid grid-cols-2 gap-4">
+                  <mat-form-field>
+                    <mat-label>Product Name</mat-label>
+                    <input
+                      matInput
+                      [(ngModel)]="prod.name"
+                      required
+                      [disabled]="isAffiliateProduct"
+                    />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Price</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      [(ngModel)]="prod.price"
+                      required
+                      [min]="isAffiliateProduct ? prod.originalId.price : 0"
+                      step="1"
+                    />
+                    <span matSuffix class="pr-2">KES</span>
+                  </mat-form-field>
+                </div>
+
+                <!-- Category Section -->
+                <div class="grid grid-cols-2 gap-4">
+                  <mat-form-field>
+                    <mat-label>Category</mat-label>
+                    <mat-select
+                      [(ngModel)]="prod.category"
+                      (ngModelChange)="onCategoryChange($event)"
+                      required
+                      [disabled]="isAffiliateProduct"
+                    >
+                      <mat-option
+                        *ngFor="let cat of fullCategories"
+                        [value]="cat.name"
+                      >
+                        {{ cat.name }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Subcategory</mat-label>
+                    <mat-select
+                      [(ngModel)]="prod.subcategory"
+                      required
+                      [disabled]="isAffiliateProduct"
+                    >
+                      <mat-option *ngFor="let sub of mySubs" [value]="sub">
+                        {{ sub }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <!-- Description -->
+                <mat-form-field class="w-full">
+                  <mat-label>Description</mat-label>
+                  <textarea
+                    matInput
+                    [(ngModel)]="prod.description"
+                    rows="4"
+                  ></textarea>
+                  <button
+                    mat-icon-button
+                    matSuffix
+                    (click)="generateDescription()"
+                    matTooltip="Generate Description"
+                  >
+                    <mat-icon>auto_fix_high</mat-icon>
+                  </button>
+                </mat-form-field>
+
+                <!-- Product Settings -->
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Product Settings</mat-panel-title>
+                  </mat-expansion-panel-header>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <mat-slide-toggle
+                      [(ngModel)]="prod.inStock"
+                      [disabled]="isAffiliateProduct"
+                      >In Stock</mat-slide-toggle
+                    >
+                    <mat-slide-toggle [(ngModel)]="prod.hide"
+                      >Hide Product</mat-slide-toggle
+                    >
+                    <mat-slide-toggle [(ngModel)]="prod.showGoogle"
+                      >Google Shopping</mat-slide-toggle
+                    >
+                    <mat-slide-toggle [(ngModel)]="prod.showRelated"
+                      >Related Products</mat-slide-toggle
+                    >
+                  </div>
+                  <!-- Product Properties Section -->
+                  <div class="product-properties mb-4">
+                    <mat-label class="block mb-2 font-medium"
+                      >Product Properties</mat-label
+                    >
+
+                    <!-- Product Type Toggles -->
+                    <div class="flex items-center gap-4 mb-3">
+                      <mat-checkbox
+                        [(ngModel)]="isPrimaryProduct"
+                        (change)="toggleFeature('Slider')"
+                      >
+                        Primary Product
+                      </mat-checkbox>
+
+                      <mat-checkbox
+                        [(ngModel)]="isSecondaryProduct"
+                        (change)="toggleFeature('Home Page')"
+                      >
+                        Secondary Product
+                      </mat-checkbox>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+
+                <!-- Handling/Preparation Time -->
+                <div class="mb-4">
+                  <mat-label class="block mb-2">Preparation Time</mat-label>
+                  <div class="flex items-center gap-3">
+                    <!-- Amount Input -->
+                    <mat-form-field class="w-[120px]">
+                      <mat-label>Amount</mat-label>
+                      <input
+                        matInput
+                        type="number"
+                        [(ngModel)]="prod.handlingTime.amount"
+                        min="1"
+                        [disabled]="isAffiliateProduct"
+                      />
+                    </mat-form-field>
+
+                    <!-- Unit Selection -->
+                    <mat-form-field class="w-[120px]">
+                      <mat-label>Unit</mat-label>
+                      <mat-select
+                        [(ngModel)]="prod.handlingTime.unit"
+                        [disabled]="isAffiliateProduct"
+                      >
+                        <mat-option value="hours">Hours</mat-option>
+                        <mat-option value="days">Days</mat-option>
+                        <mat-option value="weeks">Weeks</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                <!-- Condition -->
+                <div class="mb-4">
+                  <mat-label class="block mb-2">Condition</mat-label>
+                  <mat-radio-group
+                    [(ngModel)]="prod.condition"
+                    [disabled]="isAffiliateProduct"
+                  >
+                    <mat-radio-button value="New">New</mat-radio-button>
+                    <mat-radio-button value="Used">Used</mat-radio-button>
+                    <mat-radio-button value="Refurbished"
+                      >Refurbished</mat-radio-button
+                    >
+                  </mat-radio-group>
+                </div>
+
+                <!-- Colors -->
+                <div class="mb-4">
+                  <mat-label class="block mb-2">Colors</mat-label>
+                  <div class="flex items-center gap-2">
+                    <input
+                      matInput
+                      type="color"
+                      [(ngModel)]="selectedColor"
+                      class="w-[50px]"
+                      [disabled]="isAffiliateProduct"
+                    />
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="addColor(selectedColor)"
+                      [disabled]="isAffiliateProduct"
+                    >
+                      Add Color
+                    </button>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    <div
+                      *ngFor="let color of prod.colors"
+                      class="flex items-center gap-2 p-2 rounded bg-gray-100"
+                    >
+                      <!-- Color Sample -->
+                      <div
+                        class="w-6 h-6 rounded border"
+                        [style.background-color]="color"
+                      ></div>
+                      <!-- Color Value -->
+                      <span class="color-value">{{ color }}</span>
+                      <!-- Delete Button -->
+                      <mat-icon
+                        (click)="removeColor(color)"
+                        class="cursor-pointer text-gray-600 hover:text-red-500"
+                      >
+                        close
+                      </mat-icon>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sizes (for clothing) -->
+                <div *ngIf="prod.category === 'Fashion'" class="mb-4">
+                  <mat-label class="block mb-2">Sizes</mat-label>
+                  <div class="flex items-center gap-2">
+                    <mat-form-field>
+                      <mat-select
+                        [(ngModel)]="newSize"
+                        [disabled]="isAffiliateProduct"
+                      >
+                        <mat-option
+                          *ngFor="let size of sizesArray"
+                          [value]="size"
+                        >
+                          {{ size }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="addSize(newSize)"
+                      [disabled]="isAffiliateProduct"
+                    >
+                      Add Size
+                    </button>
+                  </div>
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    <div
+                      *ngFor="let size of prod.sizes"
+                      class="size-chip flex items-center gap-1 p-2 rounded bg-gray-200"
+                    >
+                      {{ size }}
+                      <mat-icon
+                        (click)="removeSize(size)"
+                        class="cursor-pointer"
+                      >
+                        close
+                      </mat-icon>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Add this at the bottom of the basic-info-form div, after all other form elements -->
+                <div class="flex justify-end mt-4">
+                  <div class="flex gap-2">
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="saveChanges()"
+                      [disabled]="
+                        isProgress === 'Saving' || !hasProductChanges()
+                      "
+                    >
+                      <mat-icon *ngIf="isProgress === 'Saving'"
+                        >hourglass_empty</mat-icon
+                      >
+                      Save Changes
+                    </button>
+
+                    <button
+                      mat-raised-button
+                      color="warn"
+                      (click)="discardChanges()"
+                      [disabled]="!hasProductChanges()"
+                    >
+                      <mat-icon>cancel</mat-icon>
+                      Cancel Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Additional Tabs for Business Accounts -->
+          <ng-container *ngIf="isBusinessAccount">
+            <!-- Specifications Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="mr-2">description</mat-icon>
+                Product Details
+              </ng-template>
+
+              <div class="p-6 space-y-8">
+                <!-- Specifications Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <div
+                    class="section-header flex justify-between items-center mb-4"
+                  >
+                    <h6 class="text-lg font-medium text-gray-800">
+                      Specifications
+                    </h6>
+                  </div>
+
+                  <!-- Existing Specifications List -->
+                  <div class="specs-container space-y-3 mb-4">
+                    <div
+                      *ngFor="let spec of prod.specs; let i = index"
+                      class="spec-item flex gap-3 items-center bg-gray-50 p-4 rounded-lg"
+                    >
+                      <div class="flex-grow">
+                        <div class="font-medium">{{ spec.name }}</div>
+                        <div class="text-gray-600">{{ spec.detail }}</div>
+                      </div>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="removeSpec(i)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Add New Specification -->
+                  <div class="add-new-section bg-gray-50 p-4 rounded-lg">
+                    <div class="flex gap-3">
+                      <mat-form-field class="flex-1">
+                        <mat-label>Name</mat-label>
+                        <input matInput [(ngModel)]="newSpec.name" />
+                      </mat-form-field>
+                      <mat-form-field class="flex-1">
+                        <mat-label>Detail</mat-label>
+                        <input matInput [(ngModel)]="newSpec.detail" />
+                      </mat-form-field>
+                      <button mat-mini-fab color="primary" (click)="addSpec()">
+                        <mat-icon
+                          *ngIf="isProgress !== 'specs'; else loadingSpinner"
+                          >add</mat-icon
+                        >
+                        <ng-template #loadingSpinner>
+                          <mat-spinner diameter="20"></mat-spinner>
+                        </ng-template>
+                      </button>
+                      <button
+                        mat-mini-fab
+                        color="primary"
+                        (click)="generateSpecs()"
+                      >
+                        <mat-icon
+                          *ngIf="
+                            isProgress !== 'generateSpecs';
+                            else loadingSpinner
+                          "
+                          >auto_fix_high</mat-icon
+                        >
+                        <ng-template #loadingSpinner>
+                          <mat-spinner diameter="20"></mat-spinner>
+                        </ng-template>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- USPs Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <div
+                    class="section-header flex justify-between items-center mb-4"
+                  >
+                    <h6 class="text-lg font-medium text-gray-800">
+                      Unique Selling Points
+                    </h6>
+                  </div>
+
+                  <!-- Existing USPs List -->
+                  <div class="usps-container space-y-3 mb-4">
+                    <div
+                      *ngFor="let usp of prod.USPs; let i = index"
+                      class="usp-item flex gap-3 items-center bg-gray-50 p-4 rounded-lg"
+                    >
+                      <div class="flex-grow">{{ usp }}</div>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="removeUsp(i)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Add New USP -->
+                  <div class="add-new-section bg-gray-50 p-4 rounded-lg">
+                    <div class="flex gap-3">
+                      <mat-form-field class="flex-grow">
+                        <mat-label>Title</mat-label>
+                        <input matInput [(ngModel)]="newUsp" />
+                      </mat-form-field>
+                      <button mat-mini-fab color="primary" (click)="addUsp()">
+                        <mat-icon
+                          *ngIf="isProgress !== 'USPs'; else loadingSpinner"
+                          >add</mat-icon
+                        >
+                        <ng-template #loadingSpinner>
+                          <mat-spinner diameter="20"></mat-spinner>
+                        </ng-template>
+                      </button>
+                      <button
+                        mat-mini-fab
+                        color="primary"
+                        (click)="generateUsp()"
+                      >
+                        <mat-icon
+                          *ngIf="
+                            isProgress !== 'generateUsp';
+                            else loadingSpinnerUsp2
+                          "
+                          >auto_fix_high</mat-icon
+                        >
+                        <ng-template #loadingSpinnerUsp2>
+                          <mat-spinner diameter="20"></mat-spinner>
+                        </ng-template>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FAQs Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <div
+                    class="section-header flex justify-between items-center mb-4"
+                  >
+                    <h6 class="text-lg font-medium text-gray-800">
+                      Frequently Asked Questions
+                    </h6>
+                  </div>
+
+                  <!-- Existing FAQs List -->
+                  <div class="faqs-container space-y-3 mb-4">
+                    <div
+                      *ngFor="let faq of prod.faqs; let i = index"
+                      class="faq-item bg-gray-50 p-4 rounded-lg"
+                    >
+                      <div class="flex justify-between items-start gap-3">
+                        <div class="flex-grow">
+                          <div class="font-medium">{{ faq.question }}</div>
+                          <div class="text-gray-600 mt-2">{{ faq.answer }}</div>
+                        </div>
+                        <button
+                          mat-icon-button
+                          color="warn"
+                          (click)="removeFaq(i)"
+                        >
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Add New FAQ -->
+                  <div class="add-new-section bg-gray-50 p-4 rounded-lg">
+                    <div class="flex flex-col gap-3">
+                      <mat-form-field>
+                        <mat-label>Question</mat-label>
+                        <input matInput [(ngModel)]="newFaq.question" />
+                      </mat-form-field>
+                      <mat-form-field>
+                        <mat-label>Answer</mat-label>
+                        <textarea
+                          matInput
+                          [(ngModel)]="newFaq.answer"
+                          rows="3"
+                        ></textarea>
+                      </mat-form-field>
+                      <div class="flex justify-end gap-2">
+                        <button mat-mini-fab color="primary" (click)="addFaq()">
+                          <mat-icon
+                            *ngIf="isProgress !== 'faqs'; else loadingSpinner"
+                            >add</mat-icon
+                          >
+                          <ng-template #loadingSpinner>
+                            <mat-spinner diameter="20"></mat-spinner>
+                          </ng-template>
+                        </button>
+
+                        <button
+                          mat-mini-fab
+                          color="primary"
+                          (click)="generateFaq()"
+                        >
+                          <mat-icon
+                            *ngIf="
+                              isProgress !== 'generateFaq';
+                              else loadingSpinnerFaq
+                            "
+                            >auto_fix_high</mat-icon
+                          >
+                          <ng-template #loadingSpinnerFaq>
+                            <mat-spinner diameter="20"></mat-spinner>
+                          </ng-template>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Price Options Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <div
+                    class="section-header flex justify-between items-center mb-4"
+                  >
+                    <h6 class="text-lg font-medium text-gray-800">
+                      Price Options
+                    </h6>
+                  </div>
+
+                  <!-- Existing Price Options List -->
+                  <div class="price-options-container space-y-3 mb-4">
+                    <div
+                      *ngFor="let option of prod.priceOptions; let i = index"
+                      class="price-option-item flex gap-3 items-center bg-gray-50 p-4 rounded-lg"
+                    >
+                      <div class="flex-grow">
+                        <div class="font-medium">{{ option.option }}</div>
+                        <div class="text-gray-600">KES {{ option.price }}</div>
+                      </div>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        (click)="removePriceOption(i)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Add New Price Option -->
+                  <div class="add-new-section bg-gray-50 p-4 rounded-lg">
+                    <div class="flex gap-3">
+                      <mat-form-field class="flex-1">
+                        <mat-label>Option</mat-label>
+                        <input matInput [(ngModel)]="newPriceOption.option" />
+                      </mat-form-field>
+                      <mat-form-field class="flex-1">
+                        <mat-label>Price</mat-label>
+                        <input
+                          matInput
+                          type="number"
+                          [(ngModel)]="newPriceOption.price"
+                          min="0"
+                        />
+                      </mat-form-field>
+                      <button
+                        mat-mini-fab
+                        color="primary"
+                        (click)="addPriceOption()"
+                      >
+                        <mat-icon
+                          *ngIf="
+                            isProgress !== 'priceOptions';
+                            else loadingSpinner
+                          "
+                          >add</mat-icon
+                        >
+                        <ng-template #loadingSpinner>
+                          <mat-spinner diameter="20"></mat-spinner>
+                        </ng-template>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Coupons Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <div
+                    class="section-header flex justify-between items-center mb-4"
+                  >
+                    <h6 class="text-lg font-medium text-gray-800">Coupons</h6>
+                  </div>
+
+                  <!-- Existing Coupons List -->
+                  <div class="coupons-container space-y-3 mb-4">
+                    <div
+                      *ngFor="let coupon of prod.coupons; let i = index"
+                      class="coupon-item flex gap-3 items-center bg-gray-50 p-4 rounded-lg"
+                    >
+                      <div class="flex-grow">
+                        <div class="font-medium">{{ coupon.name }}</div>
+                        <div class="text-gray-600">
+                          {{ coupon.discount }}% off
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <mat-checkbox
+                          [checked]="coupon.default"
+                          (change)="setDefaultCoupon(i)"
+                        >
+                          Default
+                        </mat-checkbox>
+                        <button
+                          mat-icon-button
+                          color="warn"
+                          (click)="removeCoupon(i)"
+                        >
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Add New Coupon -->
+                  <div class="add-new-section bg-gray-50 p-4 rounded-lg">
+                    <div class="flex gap-3">
+                      <mat-form-field class="flex-1">
+                        <mat-label>Coupon Name</mat-label>
+                        <input matInput [(ngModel)]="newCoupon.name" />
+                      </mat-form-field>
+                      <mat-form-field class="flex-1">
+                        <mat-label>Discount (%)</mat-label>
+                        <input
+                          matInput
+                          type="number"
+                          [(ngModel)]="newCoupon.discount"
+                          min="0"
+                          max="100"
+                        />
+                      </mat-form-field>
+                      <button
+                        mat-mini-fab
+                        color="primary"
+                        (click)="addCoupon()"
+                      >
+                        <mat-icon>add</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pro Sellers Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <div
+                    class="section-header flex justify-between items-center mb-4"
+                  >
+                    <h6 class="text-lg font-medium text-gray-800">Pro Sales</h6>
+                  </div>
+
+                  <!-- Pro Sales Settings -->
+                  <div class="flex gap-4 mb-4">
+                    <mat-form-field class="flex-grow">
+                      <mat-label>Visibility</mat-label>
+                      <mat-select
+                        [(ngModel)]="prod.affiliateVisibility"
+                        (ngModelChange)="hasUnsavedChanges = true"
+                      >
+                        <mat-option value="private">Private</mat-option>
+                        <mat-option value="public">Public</mat-option>
+                        <mat-option value="restricted">Restricted</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field class="w-[200px]">
+                      <mat-label>Commission (%)</mat-label>
+                      <input
+                        matInput
+                        type="number"
+                        [(ngModel)]="prod.commission"
+                        (ngModelChange)="hasUnsavedChanges = true"
+                        min="0"
+                        max="100"
+                        [disabled]="prod.affiliateVisibility === 'private'"
+                      />
+                    </mat-form-field>
+
+                    <button
+                      *ngIf="hasUnsavedChanges"
+                      mat-raised-button
+                      color="primary"
+                      (click)="saveChanges()"
+                      [disabled]="isSaving"
+                    >
+                      <mat-spinner
+                        *ngIf="isSaving"
+                        diameter="20"
+                        class="inline mr-2"
+                      >
+                      </mat-spinner>
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+
+                <!-- My Affiliates Section -->
+                <div class="details-section bg-white rounded-lg p-6">
+                  <app-my-affiliates [productId]="prod._id">
+                  </app-my-affiliates>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Landing Pages Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="mr-2">web</mat-icon>
+                Landing Pages
+              </ng-template>
+              <app-landing-pages
+                [landingPages]="prod.landingPages"
+                (landingPagesChange)="handleLandingPagesChange($event)"
+              >
+              </app-landing-pages>
+            </mat-tab>
+          </ng-container>
+        </mat-tab-group>
+      </ng-container>
+    </mat-card>
+  </ng-container>
+
+  <!-- No Products Template -->
+  <ng-template #noProducts>
+    <mat-card class="empty-state p-8 text-center m-2">
+      <mat-icon class="empty-icon text-6xl mb-4">inventory_2</mat-icon>
+      <h2 class="text-xl mb-2">No Products Found</h2>
+      <p class="text-gray-600 mb-4">
+        There are no products available to manage.
+      </p>
+      <button mat-raised-button color="primary">
+        <mat-icon>add</mat-icon>
+        Add New Product
+      </button>
+    </mat-card>
+  </ng-template>
+
+  <!-- Loading Template -->
+  <ng-template #loading>
+    <mat-card class="loading-state p-8 text-center m-2">
+      <mat-spinner diameter="48" class="mx-auto mb-4"></mat-spinner>
+      <p class="text-gray-600">Loading products...</p>
+    </mat-card>
+  </ng-template>
+
+  <!-- Error Template -->
+  <ng-template #errorState>
+    <mat-card class="error-state p-8 text-center m-2">
+      <mat-icon class="error-icon text-6xl mb-4 text-red-500"
+        >error_outline</mat-icon
+      >
+      <h2 class="text-xl mb-2">Error Loading Products</h2>
+      <p class="text-gray-600 mb-4">{{ errorMessage }}</p>
+      <button mat-raised-button color="primary" (click)="retryLoading()">
+        <mat-icon>refresh</mat-icon>
+        Retry
+      </button>
+    </mat-card>
+  </ng-template>
+
+  <!-- Unsaved Changes Dialog -->
+  <ng-template #unsavedChangesDialog>
+    <h2 mat-dialog-title>Unsaved Changes</h2>
+    <mat-dialog-content>
+      You have unsaved changes. Would you like to save them before continuing?
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="discardChanges()">Discard</button>
+      <button mat-button color="warn" (click)="cancelNavigation()">
+        Cancel
+      </button>
+      <button mat-raised-button color="primary" (click)="saveChanges()">
+        Save
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+
+  <!-- Delete Confirmation Dialog -->
+  <ng-template #deleteConfirmDialog>
+    <h2 mat-dialog-title>Delete Product</h2>
+    <mat-dialog-content>
+      Are you sure you want to delete this product? This action cannot be
+      undone.
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-button color="warn" (click)="confirmDelete()">Delete</button>
+    </mat-dialog-actions>
+  </ng-template>
+
+  <!-- Image Delete Confirmation Dialog -->
+  <ng-template #imageDeleteDialog>
+    <h2 mat-dialog-title>Delete Image</h2>
+    <mat-dialog-content>
+      Are you sure you want to remove this image?
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button
+        mat-button
+        color="warn"
+        (click)="confirmDeleteImage(selectedImageId)"
+      >
+        Delete
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+
+  <!-- Add this at the bottom of your template -->
+  <ng-template #errorSnackbarTemplate let-data>
+    <div class="error-snackbar-content">
+      <span class="error-message">{{ data.message }}</span>
+      <button mat-icon-button (click)="snackBar.dismiss()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </ng-template>
+</div>

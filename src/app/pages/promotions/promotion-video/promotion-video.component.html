@@ -1,0 +1,52 @@
+<div class="video-promotion-wrapper">
+  <div class="promotion-header">
+    <h2>Video Promotion</h2>
+
+    <div class="link-input-container">
+      <mat-form-field appearance="outline" class="link-input">
+        <mat-label>Video Link</mat-label>
+        <input
+          matInput
+          [(ngModel)]="link"
+          placeholder="https://www.youtube.com/embed/..."
+        />
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="setLinkHandler()"
+        [disabled]="adding"
+      >
+        {{ adding ? "Setting..." : "Set Link" }}
+      </button>
+    </div>
+  </div>
+
+  <div class="videos-container">
+    <div
+      *ngFor="let video of promotions | filterBy : 'type' : 'video'"
+      class="video-item"
+    >
+      <iframe
+        [src]="video.content | safe"
+        width="100%"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+
+      <div class="video-actions">
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="deleteVideo(video._id)"
+          [disabled]="deleting === video._id"
+        >
+          <mat-icon>{{
+            deleting === video._id ? "hourglass_empty" : "delete"
+          }}</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

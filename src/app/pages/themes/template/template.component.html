@@ -1,0 +1,38 @@
+<div
+  class="template-container"
+  [class.selected]="selectedTemplate === template.name"
+>
+  <img [src]="currentImage" class="template-image" />
+
+  <div class="template-content">
+    <div class="theme-selection">
+      <h6>{{ template.name }}</h6>
+
+      <div class="themes-list">
+        <div
+          *ngFor="let theme of template.themes; let i = index"
+          class="theme-item"
+          [class.selected]="isThemeSelected(theme)"
+          (click)="select(theme)"
+        >
+          {{ theme.name }}
+        </div>
+      </div>
+    </div>
+
+    <div class="template-actions">
+      <a [href]="template.preview + '/'" class="preview-link">
+        <!-- Preview -->
+      </a>
+
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="applyTemplate()"
+        [disabled]="isTemplateApplied() || applying"
+      >
+        {{ applying ? "Applying..." : "Apply" }}
+      </button>
+    </div>
+  </div>
+</div>

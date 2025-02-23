@@ -1,0 +1,29 @@
+.ai-modal {
+  min-width: 500px;
+  max-width: 800px;
+  padding: 20px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.preview-content {
+  background-color: #efefef;
+  border-radius: 5px;
+  padding: 15px;
+}
+
+:host ::ng-deep .ul-content {
+  ul {
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  li {
+    margin: 5px 0;
+  }
+}

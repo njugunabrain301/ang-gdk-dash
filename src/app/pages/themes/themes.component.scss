@@ -1,0 +1,42 @@
+.content-wrapper {
+  padding: 48px 24px;
+}
+
+.card-header {
+  margin: -24px 24px 0;
+  padding: 24px 16px;
+  background: linear-gradient(195deg, #49a3f1, #1a73e8);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.14);
+
+  h2 {
+    color: white;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 400;
+  }
+}
+
+.card-content {
+  padding: 24px;
+
+  .holiday-theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 0 24px;
+  }
+}
+
+:host ::ng-deep {
+  .success-snackbar {
+    background: #4caf50;
+    color: white;
+  }
+
+  .error-snackbar {
+    background: #f44336;
+    color: white;
+  }
+}

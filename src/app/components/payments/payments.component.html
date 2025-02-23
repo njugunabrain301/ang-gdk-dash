@@ -1,0 +1,120 @@
+<div class="p-6">
+  <mat-card class="bg-white shadow-lg w-full mb-6">
+    <!-- Paybill Section -->
+    <div class="flex items-center justify-between p-4 border-b">
+      <h6 class="text-xl font-semibold">M-Pesa Paybill</h6>
+      <div class="flex space-x-2">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="updatePaybill()"
+          [disabled]="isLoading || !hasPaybillChanges()"
+        >
+          <mat-icon *ngIf="isLoading">hourglass_empty</mat-icon>
+          Save Changes
+        </button>
+        <button
+          mat-raised-button
+          color="warn"
+          (click)="cancelPaybillChanges()"
+          [disabled]="!hasPaybillChanges()"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4 space-y-4">
+      <mat-form-field class="w-full">
+        <mat-label>Paybill Number</mat-label>
+        <input
+          matInput
+          [(ngModel)]="paybillItem.paybillNumber"
+          name="paybillNumber"
+          placeholder="Enter Paybill Number"
+        />
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Account Number</mat-label>
+        <input
+          matInput
+          [(ngModel)]="paybillItem.accountNumber"
+          name="accountNumber"
+          placeholder="Enter Account Number"
+        />
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Business Name</mat-label>
+        <input
+          matInput
+          [(ngModel)]="paybillItem.name"
+          name="paybillName"
+          placeholder="Enter Business Name"
+        />
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <mat-card class="bg-white shadow-lg w-full">
+    <!-- Till Section -->
+    <div class="flex items-center justify-between p-4 border-b">
+      <h6 class="text-xl font-semibold">M-Pesa Till</h6>
+      <div class="flex space-x-2">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="updateTill()"
+          [disabled]="isLoading || !hasTillChanges()"
+        >
+          <mat-icon *ngIf="isLoading">hourglass_empty</mat-icon>
+          Save Changes
+        </button>
+        <button
+          mat-raised-button
+          color="warn"
+          (click)="cancelTillChanges()"
+          [disabled]="!hasTillChanges()"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4 space-y-4">
+      <mat-form-field class="w-full">
+        <mat-label>Till Number</mat-label>
+        <input
+          matInput
+          [(ngModel)]="tillItem.tillNumber"
+          name="tillNumber"
+          placeholder="Enter Till Number"
+        />
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Store Number</mat-label>
+        <input
+          matInput
+          [(ngModel)]="tillItem.storeNumber"
+          name="storeNumber"
+          placeholder="Enter Store Number"
+        />
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Business Name</mat-label>
+        <input
+          matInput
+          [(ngModel)]="tillItem.name"
+          name="tillName"
+          placeholder="Enter Business Name"
+        />
+      </mat-form-field>
+    </div>
+  </mat-card>
+</div>
+
+<!-- Snackbar for notifications -->
+<mat-snack-bar-container></mat-snack-bar-container>

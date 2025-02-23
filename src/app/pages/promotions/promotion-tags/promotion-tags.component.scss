@@ -1,0 +1,70 @@
+.tags-promotion-wrapper {
+  border: 1px solid #bbb;
+  background-color: #eee;
+  margin: 10px auto;
+  border-radius: 7px;
+  padding: 15px;
+
+  @media (max-width: 768px) {
+    width: 96%;
+  }
+}
+
+:host {
+  width: 50%;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+.promotion-header {
+  text-align: center;
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+  }
+}
+
+.tag-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+
+  .tag-input {
+    width: 70%;
+  }
+}
+
+.tags-container {
+  .tag-item {
+    margin: 5px auto;
+    width: 90%;
+    border: 1px solid #bbb;
+    border-radius: 7px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+
+    .tag-content {
+      font-size: 11pt;
+    }
+  }
+}
+
+:host ::ng-deep {
+  .success-snackbar {
+    background: #4caf50;
+    color: white;
+  }
+
+  .error-snackbar {
+    background: #f44336;
+    color: white;
+  }
+}

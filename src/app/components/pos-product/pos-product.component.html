@@ -1,0 +1,54 @@
+<div class="grid grid-cols-12 gap-4 bg-gray-200 m-2 rounded-lg p-4">
+  <div class="col-span-4">
+    <img [src]="product.img" class="w-full" alt="{{ product.name }}" />
+  </div>
+  <div class="col-span-8 flex flex-col justify-between">
+    <div class="text-sm">
+      <p>{{ product.name }}</p>
+      <!-- Sizes -->
+      <div class="flex flex-wrap mt-2">
+        <div
+          *ngFor="let sz of product.sizes"
+          (click)="setSize(sz)"
+          [ngClass]="{
+            'border-blue-500 text-blue-500': size === sz,
+            'border-gray-500': size !== sz
+          }"
+          class="border-3 rounded m-1 p-1 cursor-pointer"
+        >
+          {{ sz }}
+        </div>
+      </div>
+      <!-- Colors -->
+      <div class="flex flex-wrap mt-2">
+        <div
+          *ngFor="let cl of product.colors"
+          (click)="setColor(cl)"
+          [ngStyle]="{ 'background-color': cl }"
+          [ngClass]="{ 'border-blue-500 shadow-md': color === cl }"
+          class="rounded-full w-5 h-5 m-1 cursor-pointer"
+        ></div>
+      </div>
+      <!-- Price Options -->
+      <div class="flex flex-wrap mt-2">
+        <div
+          *ngFor="let op of product.priceOptions"
+          (click)="setOption(op)"
+          [ngClass]="{
+            'border-blue-500 text-blue-500': option._id === op._id,
+            'border-gray-500': option._id !== op._id
+          }"
+          class="border-3 rounded m-1 p-1 cursor-pointer"
+        >
+          {{ op.option }}
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-between items-center pr-2 pb-2 mt-2">
+      <span>Ksh. {{ price }}</span>
+      <button mat-raised-button color="primary" (click)="addItem()">
+        Add To List
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+.content-wrapper {
+  padding: 48px 24px;
+}
+
+.card-header {
+  margin: -24px 24px 0;
+  padding: 24px 16px;
+  background: linear-gradient(195deg, #49a3f1, #1a73e8);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.14);
+
+  h2 {
+    color: white;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 400;
+  }
+}
+
+.card-content {
+  padding: 24px;
+}
+
+.package-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 11pt;
+
+  .validity-info {
+    display: flex;
+    gap: 16px;
+
+    .days-remaining {
+      color: #4caf50;
+
+      &.warning {
+        color: #f44336;
+      }
+    }
+  }
+}
+
+.section-tabs {
+  display: flex;
+  justify-content: space-between;
+  width: 97%;
+  margin: 30px auto;
+
+  .tab-item {
+    width: 30%;
+    text-align: center;
+    color: gray;
+    cursor: pointer;
+    border-bottom: solid 1px gray;
+    padding-bottom: 8px;
+    transition: all 0.3s ease;
+
+    &.active {
+      color: #1a73e8;
+      border-bottom: solid 2px #1a73e8;
+    }
+  }
+}
+
+.payment-info {
+  padding: 0 24px;
+  font-size: 10pt;
+  margin-top: 16px;
+}

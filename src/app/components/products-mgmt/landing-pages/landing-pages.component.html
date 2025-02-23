@@ -1,0 +1,478 @@
+<div class="p-4 space-y-4">
+  <!-- Landing Pages Section -->
+  <div class="grid grid-cols-2 gap-4">
+    <!-- Left Column: Add/Edit Articles -->
+    <div class="p-4">
+      <h6 class="font-bold mb-4">Add Article</h6>
+
+      <!-- Article Type Selection -->
+      <mat-form-field class="w-full">
+        <mat-label>Article Type</mat-label>
+        <mat-select [(ngModel)]="selectedArticleType">
+          <mat-option *ngFor="let type of articleTypes" [value]="type">
+            {{ type | titlecase }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Dynamic Article Form -->
+      <div [ngSwitch]="selectedArticleType" class="space-y-4">
+        <!-- Article Form -->
+        <div *ngSwitchCase="'article'" class="flex flex-col gap-4">
+          <div class="flex items-center gap-4">
+            <img
+              [src]="
+                getImageUrl(newArticle.content.image) ||
+                'assets/placeholder.png'
+              "
+              class="w-24 h-24 object-cover"
+              alt="Article image"
+            />
+            <input
+              type="file"
+              (change)="onImageSelected($event)"
+              accept="image/*"
+            />
+          </div>
+
+          <mat-form-field class="w-full">
+            <mat-label>Title</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.title"
+              maxlength="100"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Content</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="newArticle.content.content"
+              rows="4"
+              maxlength="500"
+            ></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Title Form -->
+        <div *ngSwitchCase="'title'" class="flex flex-col gap-4">
+          <div class="flex items-center gap-4">
+            <img
+              [src]="
+                getImageUrl(newArticle.content.image) ||
+                'assets/placeholder.png'
+              "
+              class="w-24 h-24 object-cover"
+              alt="Background image"
+            />
+            <input
+              type="file"
+              (change)="onImageSelected($event)"
+              accept="image/*"
+            />
+          </div>
+
+          <mat-form-field class="w-full">
+            <mat-label>Title</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.title"
+              maxlength="100"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Subtitle</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.subtitle"
+              maxlength="150"
+            />
+          </mat-form-field>
+        </div>
+
+        <!-- Counter Form -->
+        <div *ngSwitchCase="'counter'" class="flex flex-col gap-4">
+          <div class="flex gap-4">
+            <mat-form-field class="flex-grow">
+              <mat-label>Title</mat-label>
+              <input matInput [(ngModel)]="listItem.title" maxlength="50" />
+            </mat-form-field>
+
+            <mat-form-field class="w-20">
+              <mat-label>Prefix</mat-label>
+              <input matInput [(ngModel)]="listItem.prefix" maxlength="3" />
+            </mat-form-field>
+
+            <mat-form-field class="w-32">
+              <mat-label>Value</mat-label>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="listItem.value"
+                min="-999"
+                max="999"
+              />
+            </mat-form-field>
+
+            <mat-form-field class="w-20">
+              <mat-label>Suffix</mat-label>
+              <input matInput [(ngModel)]="listItem.suffix" maxlength="30" />
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="addCounterItem()"
+              [disabled]="!listItem.value"
+            >
+              Add
+            </button>
+          </div>
+
+          <!-- Counter Items List -->
+          <div class="bg-gray-100 p-4 rounded max-h-[300px] overflow-y-auto">
+            <div
+              *ngFor="let item of newArticle.content.values; let i = index"
+              class="flex justify-between items-center py-2"
+            >
+              <span>
+                {{ item.prefix }} {{ item.value }} {{ item.suffix }}:
+                {{ item.title }}
+              </span>
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="removeCounterItem(i)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- List Form -->
+        <div *ngSwitchCase="'list'" class="flex flex-col gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>List Title</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.title"
+              maxlength="100"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>List Intro</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="newArticle.content.intro"
+              maxlength="200"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="flex gap-4">
+            <mat-form-field class="flex-grow">
+              <mat-label>List Item</mat-label>
+              <input matInput [(ngModel)]="listText" maxlength="200" />
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="addListItem()"
+              [disabled]="!listText"
+            >
+              Add
+            </button>
+          </div>
+
+          <!-- List Items -->
+          <div class="bg-gray-100 p-4 rounded max-h-[300px] overflow-y-auto">
+            <div
+              *ngFor="let item of newArticle.content.items; let i = index"
+              class="flex justify-between items-center py-2 border-b"
+            >
+              <span>{{ item }}</span>
+              <button mat-icon-button color="warn" (click)="removeListItem(i)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Link Form -->
+        <div *ngSwitchCase="'link'" class="flex flex-col gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Link Text</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.text"
+              maxlength="100"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Link URL</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.url"
+              maxlength="200"
+            />
+          </mat-form-field>
+        </div>
+
+        <!-- Video Form -->
+        <div *ngSwitchCase="'video'" class="flex flex-col gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Title</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.title"
+              maxlength="100"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Caption</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.caption"
+              maxlength="150"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Video ID</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.videoId"
+              maxlength="150"
+            />
+          </mat-form-field>
+
+          <div *ngIf="newArticle.content.videoId" class="aspect-video w-full">
+            <iframe
+              [src]="
+                'https://www.youtube.com/embed/' + newArticle.content.videoId
+                  | safe
+              "
+              class="w-full h-full"
+              frameborder="0"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+
+        <!-- Banner Video Form -->
+        <div *ngSwitchCase="'banner-video'" class="flex flex-col gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Headline</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.headline"
+              maxlength="100"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Tagline</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.tagline"
+              maxlength="150"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Manual Link</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.manualLink"
+              maxlength="150"
+            />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Video ID</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.videoId"
+              maxlength="150"
+            />
+          </mat-form-field>
+
+          <div *ngIf="newArticle.content.videoId" class="aspect-video w-full">
+            <iframe
+              [src]="
+                'https://www.youtube.com/embed/' + newArticle.content.videoId
+                  | safe
+              "
+              class="w-full h-full"
+              frameborder="0"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+
+        <div *ngSwitchCase="'carousel'" class="flex flex-col gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Carousel Title</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newArticle.content.title"
+              maxlength="50"
+            />
+          </mat-form-field>
+
+          <div class="flex items-center gap-4">
+            <img
+              [src]="getImageUrl(carouselItem.image)"
+              class="max-w-[100px] max-h-[100px]"
+              *ngIf="carouselItem.image"
+            />
+            <span class="text-sm">Item Image</span>
+            <input
+              type="file"
+              (change)="onCarouselImageSelected($event)"
+              class="ml-4"
+            />
+          </div>
+
+          <div class="flex gap-4">
+            <mat-form-field class="flex-1">
+              <mat-label>Title</mat-label>
+              <input matInput [(ngModel)]="carouselItem.title" maxlength="50" />
+            </mat-form-field>
+
+            <mat-form-field class="flex-1">
+              <mat-label>Description</mat-label>
+              <input
+                matInput
+                [(ngModel)]="carouselItem.description"
+                maxlength="100"
+              />
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="addCarouselItem()"
+              class="mt-2"
+            >
+              Add
+            </button>
+          </div>
+
+          <div class="bg-gray-200 rounded-lg p-4 max-h-[300px] overflow-y-auto">
+            <div
+              *ngFor="let item of newArticle.content.values; let i = index"
+              class="flex mb-4"
+            >
+              <img
+                [src]="getImageUrl(item.image)"
+                class="max-w-[100px] max-h-[100px]"
+                *ngIf="item.image"
+              />
+              <div class="flex-1 ml-4">
+                <div class="flex justify-between">
+                  <span>{{ item.title }}</span>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="removeCarouselItem(i)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+                <p class="text-sm">{{ item.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Article Button -->
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="addArticle()"
+        [disabled]="isAddingArticle || !selectedArticleType"
+        class="mt-4"
+      >
+        {{ isAddingArticle ? "Adding..." : "Add Article" }}
+      </button>
+
+      <!-- Landing Page Management -->
+      <div class="mt-8">
+        <h6 class="font-bold mb-4">Landing Pages</h6>
+
+        <!-- Add New Landing Page -->
+        <div class="flex gap-2 mb-4">
+          <mat-form-field class="flex-grow">
+            <mat-label>New Landing Page Name</mat-label>
+            <input matInput [(ngModel)]="newLandingPageName" maxlength="15" />
+          </mat-form-field>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="addLandingPage()"
+            [disabled]="!newLandingPageName"
+          >
+            Add
+          </button>
+        </div>
+
+        <!-- Select Landing Page -->
+        <mat-form-field class="w-full">
+          <mat-label>Select Landing Page</mat-label>
+          <mat-select [(ngModel)]="currentLandingPage">
+            <mat-option *ngFor="let lp of landingPages" [value]="lp.name">
+              {{ lp.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Right Column: Current Landing Page Content -->
+    <div class="p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h6 class="font-bold">{{ currentLandingPage }}</h6>
+
+        <!-- Landing Page Options -->
+        <div class="flex gap-4 items-center">
+          <mat-slide-toggle
+            [(ngModel)]="currentLandingPageSettings.miniHeader"
+            (change)="onMiniHeaderToggle()"
+          >
+            Mini Header
+          </mat-slide-toggle>
+
+          <mat-slide-toggle
+            [(ngModel)]="currentLandingPageSettings.default"
+            (change)="onDefaultToggle()"
+          >
+            Default
+          </mat-slide-toggle>
+        </div>
+      </div>
+
+      <!-- Articles List -->
+      <div class="overflow-y-auto max-h-[500px]">
+        <app-segment
+          *ngFor="let article of currentArticles; let i = index"
+          [article]="article"
+          [idx]="i"
+          [currentLp]="currentLandingPage"
+          (moveArticle)="handleArticleMove(article._id, $event)"
+          (updateArticle)="handleArticleUpdate(article, $event)"
+          (deleteArticle)="handleArticleDelete(article._id, $event)"
+          (toggleVisibility)="handleArticleVisibility(article._id, $event)"
+        >
+        </app-segment>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,78 @@
+<div class="p-6">
+  <div class="flex flex-col md:flex-row gap-2">
+    <!-- Add Delivery Location Section -->
+    <mat-card class="bg-white shadow-lg w-full p-4 h-[800px]">
+      <h6 class="text-xl font-semibold">Add Delivery Location</h6>
+      <mat-form-field class="w-full">
+        <mat-label>Select County</mat-label>
+        <mat-select
+          [(ngModel)]="values.county"
+          (selectionChange)="onCountyChange()"
+        >
+          <mat-option *ngFor="let county of counties" [value]="county">{{
+            county
+          }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Select Sub-County</mat-label>
+        <mat-select [(ngModel)]="values.subcounty">
+          <mat-option
+            *ngFor="let subcounty of subcounties"
+            [value]="subcounty"
+            >{{ subcounty }}</mat-option
+          >
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Courier Name</mat-label>
+        <input matInput [(ngModel)]="values.courier" />
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Delivery Cost</mat-label>
+        <input matInput type="number" [(ngModel)]="values.price" />
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Max Delivery Time (Hours)</mat-label>
+        <input matInput type="number" [(ngModel)]="values.time" />
+      </mat-form-field>
+
+      <mat-checkbox [(ngModel)]="values.payOnDelivery"
+        >Payment on delivery</mat-checkbox
+      >
+
+      <mat-form-field class="w-full">
+        <mat-label>Pickup Location Description</mat-label>
+        <textarea matInput [(ngModel)]="values.description"></textarea>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="handleAddLocation()">
+        Add Location
+      </button>
+    </mat-card>
+
+    <!-- Display Delivery Locations Section -->
+    <mat-card class="bg-white shadow-lg w-full h-[800px] overflow-y-auto">
+      <h6 class="text-xl font-semibold">Delivery Locations</h6>
+      <div *ngFor="let location of locations" class="border p-2 mb-2">
+        <div class="flex justify-between">
+          <span
+            >{{ location.county }}/{{ location.subcounty }} - Ksh.
+            {{ location.price }} ({{ location.time }} hrs)</span
+          >
+          <button mat-icon-button (click)="handleDeleteLocation(location._id)">
+            <mat-icon color="warn">delete</mat-icon>
+          </button>
+        </div>
+        <p>{{ location.description }}</p>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Snackbar for notifications -->
+  <mat-snack-bar-container></mat-snack-bar-container>
+</div>

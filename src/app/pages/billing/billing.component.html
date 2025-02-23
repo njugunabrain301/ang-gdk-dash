@@ -1,0 +1,83 @@
+<div class="content-wrapper">
+  <mat-card>
+    <div class="card-header">
+      <h2>Payments History</h2>
+    </div>
+
+    <div class="card-content">
+      <div class="package-info">
+        <div class="package-name">
+          Package: {{ currentPackage
+          }}{{ status.subscription === "trial" ? " (Trial)" : "" }}
+        </div>
+        <div class="validity-info">
+          <span>Valid Until: {{ validUntil }}</span>
+          <span
+            *ngIf="validUntil.toLowerCase() !== 'infinity'"
+            [class.warning]="daysRemaining < 5 && daysRemaining > 0"
+            class="days-remaining"
+          >
+            {{ daysRemaining }} days remaining
+          </span>
+        </div>
+      </div>
+
+      <!-- Section Tabs -->
+      <div class="section-tabs">
+        <div
+          class="tab-item"
+          [class.active]="activeTab === 1"
+          (click)="setActiveTab(1)"
+        >
+          Packages
+        </div>
+        <div
+          class="tab-item"
+          [class.active]="activeTab === 2"
+          (click)="setActiveTab(2)"
+        >
+          Marketing
+        </div>
+        <div
+          class="tab-item"
+          [class.active]="activeTab === 3"
+          (click)="setActiveTab(3)"
+        >
+          Invoices
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <ng-container [ngSwitch]="activeTab">
+        <app-packages
+          *ngSwitchCase="1"
+          [profile]="profile"
+          [invoices]="invoices"
+          [lastPayment]="lastPayment"
+          [currentPackage]="currentPackage"
+          [status]="status"
+          (invoicesChange)="invoices = $event"
+          (lastPaymentChange)="lastPayment = $event"
+          (subscriptionChange)="subscription = $event"
+          (packageChange)="currentPackage = $event"
+        >
+        </app-packages>
+
+        <app-marketing *ngSwitchCase="2"> </app-marketing>
+
+        <app-invoices
+          *ngSwitchCase="3"
+          [invoices]="invoices"
+          (invoicesChange)="invoices = $event"
+          (lastPaymentChange)="lastPayment = $event"
+        >
+        </app-invoices>
+      </ng-container>
+
+      <div class="payment-info">
+        All payments are made through our Paybill Number 412 3793 and
+        appropriate account number
+      </div>
+    </div>
+  </mat-card>
+</div>

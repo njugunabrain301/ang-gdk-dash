@@ -1,0 +1,88 @@
+<div class="invoices-container">
+  <div class="header">
+    <h3>Invoices</h3>
+  </div>
+
+  <div class="table-container">
+    <table mat-table [dataSource]="invoices">
+      <!-- Invoice Number Column -->
+      <ng-container matColumnDef="invNum">
+        <th mat-header-cell *matHeaderCellDef>Invoice Num</th>
+        <td mat-cell *matCellDef="let invoice">{{ invoice.invNum }}</td>
+      </ng-container>
+
+      <!-- Date Generated Column -->
+      <ng-container matColumnDef="dateGenerated">
+        <th mat-header-cell *matHeaderCellDef>Date Generated</th>
+        <td mat-cell *matCellDef="let invoice">
+          {{ convertDate(invoice.dateGenerated) }}
+        </td>
+      </ng-container>
+
+      <!-- Due Date Column -->
+      <ng-container matColumnDef="dueDate">
+        <th mat-header-cell *matHeaderCellDef>Due Date</th>
+        <td mat-cell *matCellDef="let invoice">
+          {{ convertDate(invoice.dueDate) }}
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let invoice">{{ invoice.status }}</td>
+      </ng-container>
+
+      <!-- Description Column -->
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef>Purpose</th>
+        <td
+          mat-cell
+          *matCellDef="let invoice"
+          (click)="showDescription(invoice.description)"
+          class="clickable"
+        >
+          {{ invoice.description }}
+        </td>
+      </ng-container>
+
+      <!-- Date Paid Column -->
+      <ng-container matColumnDef="datePaid">
+        <th mat-header-cell *matHeaderCellDef>Date Paid</th>
+        <td mat-cell *matCellDef="let invoice">
+          <ng-container [ngSwitch]="getPaymentStatus(invoice).type">
+            <button
+              *ngSwitchCase="'button'"
+              mat-raised-button
+              color="primary"
+              (click)="openPaymentDialog(getPaymentStatus(invoice).data)"
+            >
+              Pay Now
+            </button>
+            <span *ngSwitchDefault>{{ getPaymentStatus(invoice) }}</span>
+          </ng-container>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+
+    <mat-paginator
+      [pageSizeOptions]="pageSizeOptions"
+      [pageSize]="pageSize"
+      (page)="handlePageEvent($event)"
+      showFirstLastButtons
+    >
+    </mat-paginator>
+  </div>
+</div>
+
+<!-- Description Modal -->
+<div class="modal" *ngIf="showDescriptionModal">
+  <div class="modal-content">
+    <h2>Purpose</h2>
+    <p>{{ selectedInvoiceDescription }}</p>
+    <button mat-button (click)="hideDescription()">Close</button>
+  </div>
+</div>

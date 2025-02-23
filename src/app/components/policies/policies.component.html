@@ -1,0 +1,321 @@
+<div class="p-6">
+  <mat-card class="bg-white shadow-lg w-full">
+    <div class="flex items-center justify-between p-4 border-b">
+      <!-- <h6 class="text-xl font-semibold">Policies</h6> -->
+      <div class="flex space-x-2">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="updateItem()"
+          [disabled]="loading || !canSave"
+        >
+          <mat-icon *ngIf="loading">hourglass_empty</mat-icon>
+          <mat-icon *ngIf="!loading">{{ "done" }}</mat-icon>
+          {{ loading ? "Updating..." : "Save" }}
+        </button>
+        <button
+          mat-raised-button
+          color="warn"
+          (click)="cancelUpdating()"
+          [disabled]="!canCancel"
+        >
+          <mat-icon>cancel</mat-icon>
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="w-full mb-8">
+        <h6 class="text-lg font-semibold mb-4">Return Policy</h6>
+        <div class="space-y-4">
+          <div>
+            <label>Do you accept returns?</label>
+            <div>
+              <mat-radio-group
+                [(ngModel)]="returns.accept"
+                (change)="onReturnsChange()"
+              >
+                <mat-radio-button [value]="true">Yes</mat-radio-button>
+                <mat-radio-button [value]="false">No</mat-radio-button>
+              </mat-radio-group>
+            </div>
+          </div>
+
+          <div *ngIf="returns.accept">
+            <div class="space-y-4">
+              <div>
+                <label>Do you refund purchase shipping cost?</label>
+                <div>
+                  <mat-radio-group [(ngModel)]="returns.refundPurchaseShipping">
+                    <mat-radio-button [value]="true">Yes</mat-radio-button>
+                    <mat-radio-button [value]="false">No</mat-radio-button>
+                  </mat-radio-group>
+                </div>
+              </div>
+
+              <div>
+                <label>Do you refund return shipping cost?</label>
+                <div>
+                  <mat-radio-group [(ngModel)]="returns.refundReturnShipping">
+                    <mat-radio-button [value]="true">Yes</mat-radio-button>
+                    <mat-radio-button [value]="false">No</mat-radio-button>
+                  </mat-radio-group>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  >Do you offer replacement if customer complaint is
+                  valid?</label
+                >
+                <div>
+                  <mat-radio-group [(ngModel)]="returns.replace">
+                    <mat-radio-button [value]="true">Yes</mat-radio-button>
+                    <mat-radio-button [value]="false">No</mat-radio-button>
+                  </mat-radio-group>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  >Do you offer cash refund when replacement is not
+                  possible?</label
+                >
+                <div>
+                  <mat-radio-group [(ngModel)]="returns.cashRefund">
+                    <mat-radio-button [value]="true">Yes</mat-radio-button>
+                    <mat-radio-button [value]="false">No</mat-radio-button>
+                  </mat-radio-group>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-base"
+                  >How long does it take you to respond with a
+                  refund/replacement after goods are returned?</label
+                >
+                <div class="flex items-center space-x-4 mt-2">
+                  <mat-form-field>
+                    <mat-label>Unit</mat-label>
+                    <mat-select [(ngModel)]="returns.refundTimeline.unit">
+                      <mat-option value="hours">Hours</mat-option>
+                      <mat-option value="days">Days</mat-option>
+                      <mat-option value="weeks">Weeks</mat-option>
+                      <mat-option value="months">Months</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Value</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      [(ngModel)]="returns.refundTimeline.amount"
+                    />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-base"
+                  >How long does a customer have to request
+                  refund/replacement?</label
+                >
+
+                <div class="flex items-center space-x-4 mt-2">
+                  <mat-form-field>
+                    <mat-label>Unit</mat-label>
+                    <mat-select [(ngModel)]="returns.raiseTimeline.unit">
+                      <mat-option value="hours">Hours</mat-option>
+                      <mat-option value="days">Days</mat-option>
+                      <mat-option value="weeks">Weeks</mat-option>
+                      <mat-option value="months">Months</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Value</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      [(ngModel)]="returns.raiseTimeline.amount"
+                    />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-base"
+                  >In which cases do you accept returns?</label
+                >
+                <div class="flex flex-col space-y-2 mt-2">
+                  <mat-checkbox
+                    [checked]="isEligibilitySelected('mistake')"
+                    (change)="toggleEligibility('mistake')"
+                  >
+                    A mistake is made on the seller's part
+                  </mat-checkbox>
+
+                  <mat-checkbox
+                    [checked]="isEligibilitySelected('mismatch')"
+                    (change)="toggleEligibility('mismatch')"
+                  >
+                    The product doesn't look as described in product description
+                  </mat-checkbox>
+
+                  <mat-checkbox
+                    [checked]="isEligibilitySelected('defective')"
+                    (change)="toggleEligibility('defective')"
+                  >
+                    The product is defective. (Doesn't work as described in
+                    product description)
+                  </mat-checkbox>
+
+                  <mat-checkbox
+                    [checked]="isEligibilitySelected('damaged')"
+                    (change)="toggleEligibility('damaged')"
+                  >
+                    The product arrives at destination damaged
+                  </mat-checkbox>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full mt-8">
+        <h6 class="text-xl font-semibold mb-6">Shipping Policy</h6>
+
+        <div class="space-y-6">
+          <div class="w-full">
+            <label class="text-base font-medium block mb-2">
+              Do you provide shipping for clients who order online?
+            </label>
+            <mat-radio-group
+              [(ngModel)]="shipping.accept"
+              name="shippingAccept"
+              class="flex gap-4"
+            >
+              <mat-radio-button [value]="true">Yes</mat-radio-button>
+              <mat-radio-button [value]="false"
+                >No, Only in-store pickup</mat-radio-button
+              >
+            </mat-radio-group>
+          </div>
+
+          <ng-container *ngIf="shipping.accept">
+            <div class="w-full">
+              <label class="text-base font-medium block mb-2">
+                Do you guarantee that the couriers you use to ship products to
+                clients will deliver the goods without damage?
+              </label>
+              <mat-radio-group
+                [(ngModel)]="shipping.guaranteeCourier"
+                name="guaranteeCourier"
+                class="flex gap-4"
+              >
+                <mat-radio-button [value]="true">Yes</mat-radio-button>
+                <mat-radio-button [value]="false">No</mat-radio-button>
+              </mat-radio-group>
+            </div>
+
+            <div class="w-full">
+              <label class="text-base font-medium block mb-2">
+                What is the latest time a user can place an order to be eligible
+                for same day shipping?
+              </label>
+              <mat-form-field class="w-full">
+                <input
+                  matInput
+                  type="time"
+                  [(ngModel)]="shipping.cutoffTime"
+                  name="cutoffTime"
+                  min="11:00"
+                  max="23:00"
+                />
+              </mat-form-field>
+            </div>
+
+            <div class="w-full">
+              <label class="text-base font-medium block mb-2">
+                What is the earliest time you can ship a product?
+              </label>
+              <mat-form-field class="w-full">
+                <input
+                  matInput
+                  type="time"
+                  [(ngModel)]="shipping.earliestShipTime"
+                  name="earliestShipTime"
+                  min="01:00"
+                  max="13:00"
+                />
+              </mat-form-field>
+            </div>
+
+            <div class="w-full">
+              <label class="text-base font-medium block mb-2">
+                How do you determine how much time it takes to prepare goods for
+                shipping after an order is received?
+              </label>
+              <mat-radio-group
+                [(ngModel)]="shipping.handlingType"
+                name="handlingType"
+                class="flex flex-col gap-2"
+              >
+                <mat-radio-button value="constant">
+                  Constant packaging time for all individual order items
+                </mat-radio-button>
+                <mat-radio-button value="custom">
+                  Packaging time depends on item ordered
+                </mat-radio-button>
+              </mat-radio-group>
+            </div>
+
+            <ng-container *ngIf="shipping.handlingType === 'constant'">
+              <div class="w-full">
+                <label class="text-base font-medium block mb-2">
+                  How much time does it take you to prepare goods for shipping?
+                </label>
+                <div class="flex gap-4 items-center">
+                  <mat-form-field>
+                    <mat-label>Unit</mat-label>
+                    <mat-select
+                      [(ngModel)]="shipping.handlingTime.unit"
+                      name="handlingTimeUnit"
+                    >
+                      <mat-option value="hours">Hours</mat-option>
+                      <mat-option value="days">Days</mat-option>
+                      <mat-option value="weeks">Weeks</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field>
+                    <mat-label>Value</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      [(ngModel)]="shipping.handlingTime.amount"
+                      name="handlingTimeAmount"
+                    />
+                  </mat-form-field>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="shipping.handlingType === 'custom'">
+              <div class="w-full p-4 bg-gray-100 rounded">
+                <p class="text-base">
+                  * Make sure to include the handling time in the description of
+                  each individual product
+                </p>
+              </div>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+</div>
+
+<!-- Snackbar for notifications -->
+<mat-snack-bar-container></mat-snack-bar-container>

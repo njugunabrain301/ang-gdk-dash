@@ -1,0 +1,127 @@
+<mat-sidenav-container class="h-screen !rounded-none">
+  <mat-sidenav
+    #sidenav
+    [mode]="isLargeScreen ? 'side' : 'over'"
+    [opened]="isLargeScreen"
+    class="w-64 !bg-gray-800 h-full !text-white !rounded-none"
+  >
+    <div class="flex flex-col h-full overflow-hidden">
+      <div class="flex justify-between items-center">
+        <div class="p-4 text-white text-xl font-bold flex items-center">
+          <img
+            [src]="businessLogo"
+            alt="Business Logo"
+            class="w-8 h-8 mr-2 !text-white"
+          />
+          {{ businessName }}
+        </div>
+        <button
+          mat-icon-button
+          (click)="toggleSidebar()"
+          class="text-white cursor-pointer lg:hidden"
+        >
+          <mat-icon class="text-white">close</mat-icon>
+        </button>
+      </div>
+      <mat-nav-list class="flex-grow">
+        <a
+          routerLink="/dashboard"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">dashboard</mat-icon>
+          <span class="text-gray-300">Dashboard</span>
+        </a>
+        <a
+          routerLink="/profile"
+          (click)="onNavItemClick()"
+          class="flex items-center text-gray-300 hover:bg-gray-700 hover:text-white my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">person</mat-icon>
+          <span>Profile</span>
+        </a>
+        <a
+          routerLink="/products"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">inventory</mat-icon>
+          <span>Products</span>
+        </a>
+        <a
+          routerLink="/promotions"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">local_offer</mat-icon>
+          <span>Promotions</span>
+        </a>
+        <a
+          routerLink="/orders"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">shop</mat-icon>
+          <span>Orders</span>
+        </a>
+        <a
+          routerLink="/themes"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">settings</mat-icon>
+          <span>Themes</span>
+        </a>
+        <a
+          routerLink="/billing"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">receipt_long</mat-icon>
+          <span>Billing</span>
+        </a>
+        <!--
+
+        <a
+          routerLink="/notifications"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">notifications</mat-icon>
+          <span>Notifications</span>
+        </a>
+        -->
+      </mat-nav-list>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="flex flex-col h-full">
+    <mat-toolbar color="primary" class="!bg-gray-800 text-white shadow-md z-10">
+      <div class="flex justify-between items-center w-full">
+        <button mat-icon-button (click)="sidenav.toggle()" class="text-white">
+          <mat-icon class="text-white">menu</mat-icon>
+        </button>
+        <span class="text-xl font-semibold !text-white">{{
+          businessName
+        }}</span>
+
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="profileMenu"
+          class="text-white"
+        >
+          <mat-icon class="text-white">account_circle</mat-icon>
+        </button>
+        <mat-menu #profileMenu="matMenu">
+          <button mat-menu-item (click)="logout($event)">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </div>
+    </mat-toolbar>
+
+    <div class="p-6 flex-grow bg-gray-100 overflow-auto">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

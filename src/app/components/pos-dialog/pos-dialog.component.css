@@ -1,0 +1,94 @@
+/* styles.css
+.pos-dialog-container {
+  position: fixed !important;
+}
+
+.pos-dialog-container .mat-mdc-dialog-container {
+  @apply bg-white rounded-lg shadow-xl;
+}
+
+.cdk-overlay-pane {
+  position: fixed !important;
+}
+
+.cdk-global-overlay-wrapper {
+  position: fixed !important;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.cdk-overlay-backdrop {
+  position: fixed !important;
+  z-index: 999;
+}
+
+.mat-mdc-dialog-container {
+  z-index: 1000 !important;
+} */
+
+.active {
+  border-bottom: solid 2px dodgerblue;
+  color: dodgerblue;
+}
+
+.product-list,
+.selected-products {
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 7px;
+}
+
+.selected-product {
+  background-color: #efefef;
+  margin-bottom: 7px;
+  border-radius: 7px;
+  padding: 10px;
+}
+
+.color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.amount {
+  border-left: solid 1px;
+  margin: 0 15px;
+  padding-left: 15px;
+}
+
+.success-message {
+  color: green;
+  margin-left: 10px;
+}
+
+.error-message {
+  color: indianred;
+}
+
+/* :host ::ng-deep {
+  .mat-form-field {
+    .mat-form-field-wrapper {
+      padding-bottom: 1em;
+    }
+
+    &.mat-form-field-appearance-standard {
+      .mat-form-field-flex {
+        padding-top: 0;
+      }
+
+      .mat-form-field-underline {
+        bottom: 0.25em;
+      }
+    }
+  }
+} */
+
+fieldset {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}

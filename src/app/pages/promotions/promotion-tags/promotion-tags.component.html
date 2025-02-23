@@ -1,0 +1,46 @@
+<div class="tags-promotion-wrapper">
+  <div class="promotion-header">
+    <h2>Promotion Tags</h2>
+
+    <div class="tag-input-container">
+      <mat-form-field appearance="outline" class="tag-input">
+        <mat-label>Tag Content</mat-label>
+        <input
+          matInput
+          [(ngModel)]="tag"
+          maxlength="50"
+          placeholder="Enter tag content"
+        />
+        <mat-hint align="end">{{ tag.length }} / 50</mat-hint>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="addTag()"
+        [disabled]="addingTag"
+      >
+        {{ addingTag ? "Adding..." : "Add Tag" }}
+      </button>
+    </div>
+  </div>
+
+  <div class="tags-container">
+    <div
+      *ngFor="let tag of promotions | filterBy : 'type' : 'tag'"
+      class="tag-item"
+    >
+      <span class="tag-content">{{ tag.content }}</span>
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="deleteTag(tag._id)"
+        [disabled]="deleting === tag._id"
+      >
+        <mat-icon>{{
+          deleting === tag._id ? "hourglass_empty" : "delete"
+        }}</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,115 @@
+<!-- <app-dashboard-layout> -->
+<!-- <app-dashboard-navbar></app-dashboard-navbar> -->
+<div class="pt-2 pb-2">
+  <ul style="list-style: none; display: flex; justify-content: space-between">
+    <li
+      (click)="openSection(1)"
+      [ngStyle]="{
+        padding: '7px',
+        paddingBottom: '2px',
+        width: '33%',
+        textAlign: 'center',
+        fontSize: '11pt',
+        backgroundColor: section === 1 ? 'dodgerblue' : '#dbdbdb',
+        color: section === 1 ? 'white' : '#808080',
+        borderTopLeftRadius: '8px',
+        borderTopRightRadius: '8px',
+        transition: '.5s',
+        textTransform: 'uppercase',
+        cursor: 'pointer'
+      }"
+    >
+      Add Product
+    </li>
+    <li
+      (click)="openSection(2)"
+      [ngStyle]="{
+        padding: '7px',
+        paddingBottom: '2px',
+        width: '33%',
+        textAlign: 'center',
+        fontSize: '11pt',
+        backgroundColor: section === 2 ? 'dodgerblue' : '#dbdbdb',
+        color: section === 2 ? 'white' : '#808080',
+        borderTopLeftRadius: '8px',
+        borderTopRightRadius: '8px',
+        transition: '.5s',
+        textTransform: 'uppercase',
+        cursor: 'pointer'
+      }"
+    >
+      My Products ({{ prodCount }})
+    </li>
+    <li
+      (click)="openSection(3)"
+      [ngStyle]="{
+        padding: '7px',
+        paddingBottom: '2px',
+        width: '33%',
+        textAlign: 'center',
+        fontSize: '11pt',
+        backgroundColor: section === 3 ? 'dodgerblue' : '#dbdbdb',
+        color: section === 3 ? 'white' : '#808080',
+        borderTopLeftRadius: '8px',
+        borderTopRightRadius: '8px',
+        transition: '.5s',
+        textTransform: 'uppercase',
+        cursor: 'pointer'
+      }"
+    >
+      Affiliate
+    </li>
+  </ul>
+
+  <div
+    *ngIf="section === 1"
+    style="
+      background-color: #fefefe;
+      padding: 5px;
+      border-top: solid 5px dodgerblue;
+    "
+  >
+    <app-new-product
+      *ngIf="section === 1"
+      [storeData]="storeData"
+      [categories]="categories"
+      (storeDataChange)="updateStoreData($event)"
+    >
+    </app-new-product>
+  </div>
+
+  <div
+    *ngIf="section === 2"
+    style="
+      background-color: #fefefe;
+      padding: 5px;
+      border-top: solid 5px dodgerblue;
+    "
+  >
+    <!-- TODO: Implement Product component -->
+    <app-product-mgmt
+      [storeData]="storeData"
+      [fullCategories]="categories"
+      (storeDataChange)="updateStoreData($event)"
+    >
+    </app-product-mgmt>
+  </div>
+
+  <div
+    *ngIf="section === 3"
+    style="
+      background-color: #fefefe;
+      padding: 5px;
+      border-top: solid 5px dodgerblue;
+    "
+  >
+    <!-- TODO: Implement AffiliateProducts component -->
+    <app-affiliate-products
+      [storeData]="storeData"
+      (storeDataChange)="updateStoreData($event)"
+    >
+    </app-affiliate-products>
+  </div>
+</div>
+<!-- <app-footer></app-footer> -->
+<!-- </app-dashboard-layout> -->
