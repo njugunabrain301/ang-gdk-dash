@@ -52,6 +52,7 @@ export class LoginComponent implements OnInit {
 
       this.loginService.login(url, password).subscribe({
         next: (res: any) => {
+          
           if (res.success) {
             // Store data first
             localStorage.setItem('token', res.accessToken);

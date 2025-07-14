@@ -1,4 +1,4 @@
 export const environment = {
-  production: true,
+  production: false,
   apiUrl: 'http://localhost:3001/business/zidika', // Replace with your actual production API URL
 };

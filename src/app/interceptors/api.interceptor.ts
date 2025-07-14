@@ -10,6 +10,8 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   let token = localStorage.getItem('token');
   const production = environment.production;
 
+  console.log(production, 'Production env variable', environment);
+
   // Define URLs based on environment
   const primaryURL = production
     ? 'https://server.bunikasolutions.com/business/zidika'

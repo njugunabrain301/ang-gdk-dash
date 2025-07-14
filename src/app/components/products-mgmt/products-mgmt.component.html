@@ -916,7 +916,10 @@
                 </div>
 
                 <!-- Pro Sellers Section -->
-                <div class="details-section bg-white rounded-lg p-6">
+                <div
+                  class="details-section bg-white rounded-lg p-6"
+                  *ngIf="!isAffiliateProduct"
+                >
                   <div
                     class="section-header flex justify-between items-center mb-4"
                   >
@@ -969,7 +972,10 @@
                 </div>
 
                 <!-- My Affiliates Section -->
-                <div class="details-section bg-white rounded-lg p-6">
+                <div
+                  class="details-section bg-white rounded-lg p-6"
+                  *ngIf="!isAffiliateProduct"
+                >
                   <app-my-affiliates [productId]="prod._id">
                   </app-my-affiliates>
                 </div>
