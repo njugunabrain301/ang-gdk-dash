@@ -1,4 +1,5 @@
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:3001/business/zidika', // Replace with your actual production API URL
+  production: true,
+  apiUrl: 'https://bunika-n66gh.ondigitalocean.app/business/zidika', //'http://localhost:3001/business/zidika', // Replace with your actual production API URL
+  backupApiUrl: 'https://bunika.cyclic.app/business/zidika',
 };

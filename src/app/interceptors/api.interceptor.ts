@@ -13,10 +13,8 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   console.log(production, 'Production env variable', environment);
 
   // Define URLs based on environment
-  const primaryURL = production
-    ? 'https://server.bunikasolutions.com/business/zidika'
-    : 'http://localhost:3001/business/zidika';
-  const backupURL = 'https://bunika.cyclic.app/business/zidika';
+  const primaryURL = environment.apiUrl;
+  const backupURL = environment.backupApiUrl;
 
   // Function to create the request with a specific base URL
   const createRequest = (baseURL: string) => {
