@@ -52,11 +52,13 @@ export class LoginComponent implements OnInit {
 
       this.loginService.login(url, password).subscribe({
         next: (res: any) => {
-          
           if (res.success) {
             // Store data first
             localStorage.setItem('token', res.accessToken);
             localStorage.setItem('profile', JSON.stringify(res.data));
+            const expiryTime = new Date();
+            expiryTime.setHours(expiryTime.getHours() + 24);
+            localStorage.setItem('tokenExpiry', expiryTime.toISOString());
 
             if (rememberMe) {
               localStorage.setItem('rememberedUrl', url);
@@ -65,15 +67,7 @@ export class LoginComponent implements OnInit {
             }
 
             // Navigate after data is stored
-            this.router
-              .navigate(['/dashboard'])
-              .then(() => {
-                this.isLoading = false;
-              })
-              .catch((err) => {
-                console.error('Navigation failed:', err);
-                this.isLoading = false;
-              });
+            this.router.navigate(['/dashboard']);
           } else {
             this.loginError = 'Invalid credentials';
             this.isLoading = false;
