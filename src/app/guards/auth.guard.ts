@@ -10,7 +10,6 @@ export function isLoggedIn(): boolean {
   const expiryTimeString = localStorage.getItem('tokenExpiry');
 
   if (!token || !expiryTimeString) {
-    console.log('No token or expiry time, redirecting to login');
     navigateToLogin();
     return false;
   }
@@ -21,7 +20,6 @@ export function isLoggedIn(): boolean {
   if (currentTime > expiryTime) {
     localStorage.removeItem('token');
     localStorage.removeItem('tokenExpiry');
-    console.log('Token expired, redirecting to login');
     navigateToLogin();
     return false;
   }

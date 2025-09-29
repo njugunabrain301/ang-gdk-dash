@@ -103,7 +103,6 @@ export class DashboardComponent implements OnInit {
   init() {
     this.dashboardService.getStatistics().subscribe({
       next: (res: any) => {
-        console.log(res);
         if (res.success) {
           this.statistics = res.data;
           this.growth = {
@@ -195,7 +194,6 @@ export class DashboardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log('The dialog was closed');
       // Handle any actions after dialog is closed
     });
   }

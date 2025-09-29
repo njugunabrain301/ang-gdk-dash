@@ -67,7 +67,6 @@ export class ProfileInfoComponent implements OnInit {
           this.originalProfile = { ...fullProfileResponse.data.profile };
           this.mpesaTill = fullProfileResponse.data.MPesaTill || {};
           this.mpesaPaybill = fullProfileResponse.data.MPesaPaybill || {};
-          console.log(this.profile);
         }
       },
       error: (error) => {

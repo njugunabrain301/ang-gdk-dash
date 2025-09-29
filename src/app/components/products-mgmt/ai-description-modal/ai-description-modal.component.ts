@@ -60,10 +60,8 @@ export class AiDescriptionModalComponent {
           description: this.AIResponse,
         })
         .toPromise();
-      console.log(response);
       this.AIResponse = response.data;
     } catch (error) {
-      console.log(error);
       this.AIError = 'Error generating description';
     } finally {
       this.generating = false;

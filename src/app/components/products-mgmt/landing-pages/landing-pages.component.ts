@@ -444,7 +444,6 @@ export class LandingPagesComponent {
   }
 
   addCarouselItem() {
-    console.log(this.carouselItem);
     if (
       !this.carouselItem.title ||
       !this.carouselItem.description ||
@@ -462,7 +461,6 @@ export class LandingPagesComponent {
       .pipe(take(1))
       .subscribe({
         next: (response) => {
-          console.log(response);
           // Add carousel item with returned image URL
           this.newArticle.content.values.push({
             title: this.carouselItem.title,

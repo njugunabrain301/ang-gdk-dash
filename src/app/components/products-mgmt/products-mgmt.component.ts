@@ -485,12 +485,9 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
   }
 
   private updateSubcategories() {
-    // console.log(this.fullCategories);
     this.mySubs =
       this.fullCategories.find((cat) => cat.name === this.prod.category)
         ?.subcategories || [];
-
-    console.log(this.mySubs, this.prod.category);
   }
 
   // Product Navigation and Changes
@@ -562,7 +559,6 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        console.log('Received: ', result);
         this.prod.description = result;
         this.hasUnsavedChanges = true;
       }
@@ -579,7 +575,6 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
   // Image Handling
   onImageSelected(event: any) {
     const file = event.target.files[0];
-    console.log(file, 'selected');
     if (file) {
       const reader = new FileReader();
 
@@ -588,14 +583,12 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
 
       reader.onloadstart = () => {
         this.uploadProgress = 0;
-        console.log('Started progress', this.uploadProgress);
       };
 
       reader.onprogress = (e) => {
         if (e.lengthComputable) {
           this.uploadProgress = Math.round((e.loaded / e.total) * 100);
         } else {
-          console.log('else');
         }
       };
 
@@ -618,11 +611,6 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
         this.prod.images = [...this.prod.images, newImage];
         this.toggleImage(newImage.img);
 
-        console.log(
-          'Proceeding with progress',
-          this.uploadProgress,
-          this.prod.images
-        );
         this.hasUnsavedChanges = true;
 
         // Reset progress after a short delay
@@ -804,7 +792,6 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
           () => {
             this.ngZone.run(() => {
               this.isUpdating = false;
-              console.log('isUpdating: ', this.isUpdating);
             });
           }
         );
@@ -815,7 +802,6 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
             mergeMap((image) =>
               this.productService.uploadImage(image.img as File).pipe(
                 tap((response) => {
-                  console.log(response);
                   image.img = response.data;
                   delete image._id;
                 })
@@ -843,7 +829,6 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
             () => {
               this.ngZone.run(() => {
                 this.isUpdating = false;
-                console.log('isUpdating: ', this.isUpdating);
               });
             }
           );
@@ -1285,9 +1270,7 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
       );
     }
 
-    filtered.map((p) => {
-      console.log(p.category === this.sCat, p, this.sCat);
-    });
+    filtered.map((p) => {});
 
     if (this.sCat) {
       filtered = filtered.filter((p) => p.category === this.sCat);

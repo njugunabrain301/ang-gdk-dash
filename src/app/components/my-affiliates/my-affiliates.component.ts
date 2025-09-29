@@ -44,7 +44,6 @@ export class MyAffiliatesComponent implements OnInit {
   }
 
   ngOnChanges() {
-    console.log('changes productId', this.productId);
     if (this.productId) {
       this.fetchAffiliates();
     }

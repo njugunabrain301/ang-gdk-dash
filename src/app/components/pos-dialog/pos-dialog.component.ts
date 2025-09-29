@@ -80,7 +80,6 @@ export class PosDialogComponent implements OnInit {
   loadProducts() {
     this.productsService.getAllProductsList().subscribe({
       next: (res: any) => {
-        console.log(res);
         if (res.success) {
           this.products = res.data;
         }
@@ -92,7 +91,6 @@ export class PosDialogComponent implements OnInit {
   loadCheckoutInfo() {
     this.posService.getCheckoutInfo().subscribe({
       next: (res: any) => {
-        console.log(res);
         if (res.success) {
           this.checkoutInfo = res.data;
         }
@@ -159,7 +157,6 @@ export class PosDialogComponent implements OnInit {
   }
 
   getPrice(prd: any): number {
-    console.log(prd);
     return 150; // This seems to be a placeholder in the original code
   }
 

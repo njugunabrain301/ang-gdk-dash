@@ -146,7 +146,6 @@ export class DeliveriesComponent implements OnInit {
               this.counties.push(county);
             }
           });
-          console.log(this.counties);
           this.cdr.detectChanges();
         }
       },

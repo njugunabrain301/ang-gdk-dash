@@ -10,8 +10,6 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   let token = localStorage.getItem('token');
   const production = environment.production;
 
-  console.log(production, 'Production env variable', environment);
-
   // Define URLs based on environment
   const primaryURL = environment.apiUrl;
   const backupURL = environment.backupApiUrl;
@@ -33,9 +31,6 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       // Only attempt fallback in production and if error is 404, 503, or 504
       if (production && ![403, 401, 500].includes(error.status)) {
-        console.log(
-          `Primary server error ${error.status}, trying backup server...`
-        );
         // Try backup server
         const backupReq = createRequest(backupURL);
         return next(backupReq);

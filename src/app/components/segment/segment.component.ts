@@ -63,7 +63,6 @@ export class SegmentComponent implements OnInit {
     this.original = this.article;
     this.mArticle = this.article;
     this.keys = Object.keys(this.article?.content || {});
-    console.log(this.keys, this.article, this.currentLp);
   }
 
   // Movement methods
@@ -98,7 +97,6 @@ export class SegmentComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.mArticle.content.image = response.data;
-            console.log(this.mArticle);
             this.updateArticle.emit(this.mArticle);
             this.saving = false;
             this.update = false;
@@ -178,9 +176,7 @@ export class SegmentComponent implements OnInit {
   onImageSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
-      console.log(this.mArticle);
       this.mArticle.content.image = file;
-      console.log(this.mArticle);
     }
   }
 
@@ -196,9 +192,7 @@ export class SegmentComponent implements OnInit {
     return URL.createObjectURL(this.mArticle.content.image);
   }
 
-  addCarouselItem() {
-    console.log(this.newCarouselItem);
-  }
+  addCarouselItem() {}
 
   addCounterItem() {
     if (this.newCounterItem.title && this.newCounterItem.value !== undefined) {
@@ -220,7 +214,5 @@ export class SegmentComponent implements OnInit {
     }
   }
 
-  onCarouselImageSelected(event: any) {
-    console.log(event);
-  }
+  onCarouselImageSelected(event: any) {}
 }

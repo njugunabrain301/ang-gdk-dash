@@ -131,7 +131,6 @@ export class PackagePaymentDialogComponent implements OnDestroy {
     private billingService: BillingService
   ) {
     this.paymentPhone = data.phone;
-    console.log(data);
   }
 
   ngOnDestroy(): void {
@@ -221,7 +220,6 @@ export class PackagePaymentDialogComponent implements OnDestroy {
       .subscribe(() => {
         this.billingService.queryPayment(stkData).subscribe({
           next: (response) => {
-            console.log('Received', response.success, response.data.paid);
             if (response.success && response.data.paid) {
               this.paymentStatus = 'Payment received successfully!';
               setTimeout(() => this.dialogRef.close(true), 2000);
