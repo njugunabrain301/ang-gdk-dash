@@ -1,95 +1,101 @@
-<div
-  class="flex items-center justify-center min-h-screen bg-gray-100 login-background"
->
-  <form
-    [formGroup]="loginForm"
-    (ngSubmit)="onSubmit()"
-    class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-full max-w-md"
-  >
-    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
-    <div class="mb-4">
-      <label for="url" class="block text-gray-700 text-sm font-bold mb-2"
-        >Website URL</label
-      >
-      <input
-        type="text"
-        id="url"
-        formControlName="url"
-        placeholder="Enter your website url"
-        [disabled]="isLoading"
-        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-      />
-      <div
-        *ngIf="loginForm.get('url')?.invalid && loginForm.get('url')?.touched"
-        class="text-red-500 text-xs italic mt-1"
-      >
-        Website url is required
-      </div>
-    </div>
-    <div class="mb-6">
-      <label for="password" class="block text-gray-700 text-sm font-bold mb-2"
-        >Password</label
-      >
-      <input
-        type="password"
-        id="password"
-        formControlName="password"
-        placeholder="Enter your password"
-        [disabled]="isLoading"
-        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-      />
-      <div
-        *ngIf="
-          loginForm.get('password')?.invalid &&
-          loginForm.get('password')?.touched
-        "
-        class="text-red-500 text-xs italic mt-1"
-      >
-        Password is required
-      </div>
-    </div>
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center justify-center">
-        <input
-          type="checkbox"
-          id="rememberMe"
-          formControlName="rememberMe"
-          [disabled]="isLoading"
-          class="mr-2"
-        />
-        <label for="rememberMe" class="text-sm text-gray-700 !m-0"
-          >Remember&nbsp;Me</label
-        >
-      </div>
-    </div>
-    <div class="flex items-center justify-center">
-      <button
-        mat-raised-button
-        color="primary"
-        type="submit"
-        [disabled]="loginForm.invalid || isLoading"
-        class="w-full !bg-blue-500 !hover:bg-blue-600 !text-white relative h-10"
-      >
-        <span *ngIf="!isLoading">Login</span>
-        <div *ngIf="isLoading" class="flex items-center justify-center">
-          <mat-spinner [diameter]="24" class="mr-2"></mat-spinner>
-          <span>Logging in...</span>
-        </div>
-      </button>
-    </div>
-    <div class="text-center mt-4">
-      <a
-        routerLink="/forgot-password"
-        class="text-sm text-blue-500 hover:text-blue-700 cursor-pointer"
-      >
-        Forgot your password?
-      </a>
-    </div>
-    <div
-      *ngIf="loginError"
-      class="text-red-500 text-xs italic mt-4 text-center"
+<div class="min-h-screen flex">
+  <!-- Left side - 40% width with login form on white background -->
+  <div class="w-2/5 bg-white flex items-center justify-center p-8">
+    <form
+      [formGroup]="loginForm"
+      (ngSubmit)="onSubmit()"
+      class="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4 w-full max-w-md"
     >
-      {{ loginError }}
-    </div>
-  </form>
+      <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+      <div class="mb-4">
+        <label for="url" class="block text-gray-700 text-sm font-bold mb-2"
+          >Website URL</label
+        >
+        <input
+          type="text"
+          id="url"
+          formControlName="url"
+          placeholder="Enter your website url"
+          [disabled]="isLoading"
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+        <div
+          *ngIf="loginForm.get('url')?.invalid && loginForm.get('url')?.touched"
+          class="text-red-500 text-xs italic mt-1"
+        >
+          Website url is required
+        </div>
+      </div>
+      <div class="mb-6">
+        <label for="password" class="block text-gray-700 text-sm font-bold mb-2"
+          >Password</label
+        >
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="Enter your password"
+          [disabled]="isLoading"
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+        />
+        <div
+          *ngIf="
+            loginForm.get('password')?.invalid &&
+            loginForm.get('password')?.touched
+          "
+          class="text-red-500 text-xs italic mt-1"
+        >
+          Password is required
+        </div>
+      </div>
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-center">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            formControlName="rememberMe"
+            [disabled]="isLoading"
+            class="mr-2"
+          />
+          <label for="rememberMe" class="text-sm text-gray-700 !m-0"
+            >Remember&nbsp;Me</label
+          >
+        </div>
+      </div>
+      <div class="flex items-center justify-center">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="loginForm.invalid || isLoading"
+          class="w-full !bg-blue-500 !hover:bg-blue-600 !text-white relative h-10"
+        >
+          <span *ngIf="!isLoading">Login</span>
+          <div *ngIf="isLoading" class="flex items-center justify-center">
+            <mat-spinner [diameter]="24" class="mr-2"></mat-spinner>
+            <span>Logging in...</span>
+          </div>
+        </button>
+      </div>
+      <div class="text-center mt-4">
+        <a
+          routerLink="/forgot-password"
+          class="text-sm text-blue-500 hover:text-blue-700 cursor-pointer"
+        >
+          Forgot your password?
+        </a>
+      </div>
+      <div
+        *ngIf="loginError"
+        class="text-red-500 text-xs italic mt-4 text-center"
+      >
+        {{ loginError }}
+      </div>
+    </form>
+  </div>
+
+  <!-- Right side - 60% width with dark background and pattern -->
+  <div class="w-3/5 login-background">
+    <div class="geometric-pattern"></div>
+  </div>
 </div>
