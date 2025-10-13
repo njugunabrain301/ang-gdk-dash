@@ -10,6 +10,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LoginService } from '../../services/login.service';
+import { EncryptionService } from '../../services/encryption.service';
 
 @Component({
   selector: 'app-login',
@@ -32,7 +33,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private loginService: LoginService,
-    private router: Router
+    private router: Router,
+    private encryptionService: EncryptionService
   ) {
     this.loginForm = this.fb.group({
       url: ['', Validators.required],
@@ -50,35 +52,37 @@ export class LoginComponent implements OnInit {
 
       const { url, password, rememberMe } = this.loginForm.value;
 
-      this.loginService.login(url, password).subscribe({
-        next: (res: any) => {
-          if (res.success) {
-            // Store data first
-            localStorage.setItem('token', res.accessToken);
-            localStorage.setItem('profile', JSON.stringify(res.data));
-            const expiryTime = new Date();
-            expiryTime.setHours(expiryTime.getHours() + 24);
-            localStorage.setItem('tokenExpiry', expiryTime.toISOString());
+      this.loginService
+        .login(url, this.encryptionService.encryptString(password))
+        .subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              // Store data first
+              localStorage.setItem('token', res.accessToken);
+              localStorage.setItem('profile', JSON.stringify(res.data));
+              const expiryTime = new Date();
+              expiryTime.setHours(expiryTime.getHours() + 24);
+              localStorage.setItem('tokenExpiry', expiryTime.toISOString());
 
-            if (rememberMe) {
-              localStorage.setItem('rememberedUrl', url);
+              if (rememberMe) {
+                localStorage.setItem('rememberedUrl', url);
+              } else {
+                localStorage.removeItem('rememberedUrl');
+              }
+
+              // Navigate after data is stored
+              this.router.navigate(['/dashboard']);
             } else {
-              localStorage.removeItem('rememberedUrl');
+              this.loginError = 'Invalid credentials';
+              this.isLoading = false;
             }
-
-            // Navigate after data is stored
-            this.router.navigate(['/dashboard']);
-          } else {
+          },
+          error: (err) => {
             this.loginError = 'Invalid credentials';
             this.isLoading = false;
-          }
-        },
-        error: (err) => {
-          this.loginError = 'Invalid credentials';
-          this.isLoading = false;
-          console.error('Login error', err);
-        },
-      });
+            console.error('Login error', err);
+          },
+        });
     }
   }
 }

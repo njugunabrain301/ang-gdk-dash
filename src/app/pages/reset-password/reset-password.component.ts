@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ResetPasswordService } from '../../services/reset-password.service';
+import { EncryptionService } from '../../services/encryption.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -33,7 +34,8 @@ export class ResetPasswordComponent implements OnInit {
 
   constructor(
     private resetPasswordService: ResetPasswordService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private encryptionService: EncryptionService
   ) {}
 
   ngOnInit() {
@@ -61,7 +63,7 @@ export class ResetPasswordComponent implements OnInit {
 
     this.resetPasswordService
       .resetPassword({
-        password: this.password,
+        password: this.encryptionService.encryptString(this.password),
         token: this.token,
       })
       .subscribe({

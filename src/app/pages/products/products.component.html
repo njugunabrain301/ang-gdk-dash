@@ -7,7 +7,7 @@
       [ngStyle]="{
         padding: '7px',
         paddingBottom: '2px',
-        width: '33%',
+        width: '50%',
         textAlign: 'center',
         fontSize: '11pt',
         backgroundColor: section === 1 ? 'dodgerblue' : '#dbdbdb',
@@ -18,6 +18,7 @@
         textTransform: 'uppercase',
         cursor: 'pointer'
       }"
+      *ngIf="type === 'store'"
     >
       Add Product
     </li>
@@ -26,7 +27,7 @@
       [ngStyle]="{
         padding: '7px',
         paddingBottom: '2px',
-        width: '33%',
+        width: '50%',
         textAlign: 'center',
         fontSize: '11pt',
         backgroundColor: section === 2 ? 'dodgerblue' : '#dbdbdb',
@@ -45,7 +46,7 @@
       [ngStyle]="{
         padding: '7px',
         paddingBottom: '2px',
-        width: '33%',
+        width: '50%',
         textAlign: 'center',
         fontSize: '11pt',
         backgroundColor: section === 3 ? 'dodgerblue' : '#dbdbdb',
@@ -56,6 +57,7 @@
         textTransform: 'uppercase',
         cursor: 'pointer'
       }"
+      *ngIf="type === 'marketer'"
     >
       Affiliate
     </li>

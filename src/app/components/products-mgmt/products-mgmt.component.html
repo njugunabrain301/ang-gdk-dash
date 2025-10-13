@@ -362,9 +362,12 @@
                       [disabled]="isAffiliateProduct"
                       >In Stock</mat-slide-toggle
                     >
-                    <mat-slide-toggle [(ngModel)]="prod.hide"
-                      >Hide Product</mat-slide-toggle
+                    <mat-slide-toggle
+                      [(ngModel)]="prod.hide"
+                      [disabled]="prod.affiliateVisibility === 'private'"
                     >
+                      Hide Product
+                    </mat-slide-toggle>
                     <mat-slide-toggle [(ngModel)]="prod.showGoogle"
                       >Google Shopping</mat-slide-toggle
                     >

@@ -18,6 +18,7 @@ import { ProductsService } from '../../services/products.service';
 import { NewProductComponent } from '../../components/new-product/new-product.component';
 import { ProductMgmtComponent } from '../../components/products-mgmt/products-mgmt.component';
 import { AffiliateProductsComponent } from '../../components/affiliate-products/affiliate-products.component';
+import { ProfileInfoService } from '../../services/profile-info.service';
 
 @Component({
   selector: 'app-products',
@@ -44,13 +45,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
   section: number = 1;
   storeData: any[] = [];
   prodCount: number = 0;
+  type: string = '';
   private subscriptions = new Subscription();
   private alive = true;
 
   constructor(
     private productService: ProductService,
     private productsService: ProductsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private profileInfoService: ProfileInfoService
   ) {}
 
   ngOnInit() {
@@ -95,6 +98,18 @@ export class ProductsComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => console.error('Error fetching wearables:', error),
+      })
+    );
+    this.subscriptions.add(
+      this.profileInfoService.getFullProfile().subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.type = res.data.profile.type;
+            if (this.type === 'marketer') {
+              this.section = 3;
+            }
+          }
+        },
       })
     );
   }

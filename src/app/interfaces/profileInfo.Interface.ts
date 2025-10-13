@@ -18,4 +18,5 @@ export interface Profile {
   google?: string;
   responseTime: ResponseTime;
   workingHours: string;
+  type: string;
 }

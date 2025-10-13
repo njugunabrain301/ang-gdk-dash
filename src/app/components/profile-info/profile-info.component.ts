@@ -105,6 +105,7 @@ export class ProfileInfoComponent implements OnInit {
       showPrice: false,
       responseTime: { unit: 'days', amount: 1 },
       workingHours: '',
+      type: '',
     };
   }
 
