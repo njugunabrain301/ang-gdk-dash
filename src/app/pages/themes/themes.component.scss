@@ -1,10 +1,10 @@
 .content-wrapper {
-  padding: 48px 24px;
+  padding: 48px 0px;
 }
 
 .card-header {
   margin: -24px 24px 0;
-  padding: 24px 16px;
+  padding: 12px 8px;
   background: linear-gradient(195deg, #49a3f1, #1a73e8);
   border-radius: 0.75rem;
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.14);
@@ -18,14 +18,14 @@
 }
 
 .card-content {
-  padding: 24px;
+  padding: 10px;
 
   .holiday-theme-toggle {
     display: flex;
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
-    padding: 0 24px;
+    padding: 0 4px;
   }
 }
 

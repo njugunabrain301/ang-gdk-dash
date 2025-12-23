@@ -119,6 +119,26 @@
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .filters-section {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .product-list-section {
+    max-height: 40vh;
+    min-height: 200px;
+  }
+
+  .product-list-container {
+    max-height: calc(40vh - 80px);
+  }
+}
+
 .filter-button {
   color: #666;
   border-color: #ddd;
@@ -140,6 +160,13 @@
   max-height: calc(100vh - 250px);
   overflow-y: auto;
   padding-right: 8px;
+}
+
+/* Ensure proper scrolling on all screen sizes */
+@media (min-width: 769px) {
+  .product-list-container {
+    max-height: calc(100vh - 250px);
+  }
 }
 
 .product-link {

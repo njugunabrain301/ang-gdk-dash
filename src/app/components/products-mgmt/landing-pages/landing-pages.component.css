@@ -1,0 +1,39 @@
+/* Mobile responsive styles for small screens */
+@media (max-width: 640px) {
+  /* Ensure the main container doesn't overflow */
+  .p-4 {
+    padding: 1rem;
+  }
+
+  /* Make form fields stack properly on mobile */
+  mat-form-field {
+    width: 100% !important;
+  }
+
+  /* Adjust image previews on mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Ensure buttons are full width on mobile */
+  button[mat-raised-button] {
+    width: 100%;
+  }
+
+  /* Adjust carousel item display on mobile */
+  .flex.mb-4 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Ensure scrollable areas don't overflow */
+  .overflow-y-auto {
+    max-height: 50vh;
+  }
+
+  /* Adjust spacing for better mobile layout */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+}

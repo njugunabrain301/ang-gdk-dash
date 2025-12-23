@@ -1,4 +1,4 @@
-<div class="p-6">
+<div class="p-1">
   <mat-card class="mb-6">
     <!-- Tabs Navigation -->
     <div class="flex border-b">
@@ -45,24 +45,24 @@
     </div>
 
     <!-- Profile Tab Content -->
-    <div *ngIf="activeTab === 'profile'" class="p-6">
+    <div *ngIf="activeTab === 'profile'" class="p-1">
       <div class="grid grid-cols-1 gap-6">
         <app-profile-info />
       </div>
     </div>
 
     <!-- Policies Tab Content -->
-    <div *ngIf="activeTab === 'policies'" class="p-6">
+    <div *ngIf="activeTab === 'policies'" class="p-1">
       <app-policies />
     </div>
 
     <!-- Shipping Tab Content -->
-    <div *ngIf="activeTab === 'shipping'" class="p-6">
+    <div *ngIf="activeTab === 'shipping'" class="p-1">
       <app-deliveries></app-deliveries>
     </div>
 
     <!-- Payments Tab Content -->
-    <div *ngIf="activeTab === 'payments'" class="p-6">
+    <div *ngIf="activeTab === 'payments'" class="p-1">
       <app-payment />
     </div>
   </mat-card>

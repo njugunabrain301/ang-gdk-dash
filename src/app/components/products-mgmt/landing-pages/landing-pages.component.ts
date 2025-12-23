@@ -32,6 +32,7 @@ import { EMPTY, of } from 'rxjs';
     SafePipe,
   ],
   templateUrl: './landing-pages.component.html',
+  styleUrls: ['./landing-pages.component.css'],
 })
 export class LandingPagesComponent {
   @Input() landingPages: LandingPage[] = [];

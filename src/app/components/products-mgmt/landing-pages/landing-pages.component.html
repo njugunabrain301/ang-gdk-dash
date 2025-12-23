@@ -1,8 +1,8 @@
-<div class="p-4 space-y-4">
+<div class="p-1 space-y-4">
   <!-- Landing Pages Section -->
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- Left Column: Add/Edit Articles -->
-    <div class="p-4">
+    <div class="p-1">
       <h6 class="font-bold mb-4">Add Article</h6>
 
       <!-- Article Type Selection -->
@@ -19,7 +19,9 @@
       <div [ngSwitch]="selectedArticleType" class="space-y-4">
         <!-- Article Form -->
         <div *ngSwitchCase="'article'" class="flex flex-col gap-4">
-          <div class="flex items-center gap-4">
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          >
             <img
               [src]="
                 getImageUrl(newArticle.content.image) ||
@@ -32,6 +34,7 @@
               type="file"
               (change)="onImageSelected($event)"
               accept="image/*"
+              class="w-full sm:w-auto"
             />
           </div>
 
@@ -57,7 +60,9 @@
 
         <!-- Title Form -->
         <div *ngSwitchCase="'title'" class="flex flex-col gap-4">
-          <div class="flex items-center gap-4">
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          >
             <img
               [src]="
                 getImageUrl(newArticle.content.image) ||
@@ -70,6 +75,7 @@
               type="file"
               (change)="onImageSelected($event)"
               accept="image/*"
+              class="w-full sm:w-auto"
             />
           </div>
 
@@ -94,18 +100,18 @@
 
         <!-- Counter Form -->
         <div *ngSwitchCase="'counter'" class="flex flex-col gap-4">
-          <div class="flex gap-4">
+          <div class="flex flex-col sm:flex-row gap-4">
             <mat-form-field class="flex-grow">
               <mat-label>Title</mat-label>
               <input matInput [(ngModel)]="listItem.title" maxlength="50" />
             </mat-form-field>
 
-            <mat-form-field class="w-20">
+            <mat-form-field class="w-full sm:w-20">
               <mat-label>Prefix</mat-label>
               <input matInput [(ngModel)]="listItem.prefix" maxlength="3" />
             </mat-form-field>
 
-            <mat-form-field class="w-32">
+            <mat-form-field class="w-full sm:w-32">
               <mat-label>Value</mat-label>
               <input
                 matInput
@@ -116,7 +122,7 @@
               />
             </mat-form-field>
 
-            <mat-form-field class="w-20">
+            <mat-form-field class="w-full sm:w-20">
               <mat-label>Suffix</mat-label>
               <input matInput [(ngModel)]="listItem.suffix" maxlength="30" />
             </mat-form-field>
@@ -126,13 +132,14 @@
               color="primary"
               (click)="addCounterItem()"
               [disabled]="!listItem.value"
+              class="w-full sm:w-auto"
             >
               Add
             </button>
           </div>
 
           <!-- Counter Items List -->
-          <div class="bg-gray-100 p-4 rounded max-h-[300px] overflow-y-auto">
+          <div class="bg-gray-100 p-1 rounded max-h-[300px] overflow-y-auto">
             <div
               *ngFor="let item of newArticle.content.values; let i = index"
               class="flex justify-between items-center py-2"
@@ -172,7 +179,7 @@
             ></textarea>
           </mat-form-field>
 
-          <div class="flex gap-4">
+          <div class="flex flex-col sm:flex-row gap-4">
             <mat-form-field class="flex-grow">
               <mat-label>List Item</mat-label>
               <input matInput [(ngModel)]="listText" maxlength="200" />
@@ -183,13 +190,14 @@
               color="primary"
               (click)="addListItem()"
               [disabled]="!listText"
+              class="w-full sm:w-auto"
             >
               Add
             </button>
           </div>
 
           <!-- List Items -->
-          <div class="bg-gray-100 p-4 rounded max-h-[300px] overflow-y-auto">
+          <div class="bg-gray-100 p-1 rounded max-h-[300px] overflow-y-auto">
             <div
               *ngFor="let item of newArticle.content.items; let i = index"
               class="flex justify-between items-center py-2 border-b"
@@ -326,7 +334,9 @@
             />
           </mat-form-field>
 
-          <div class="flex items-center gap-4">
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          >
             <img
               [src]="getImageUrl(carouselItem.image)"
               class="max-w-[100px] max-h-[100px]"
@@ -336,11 +346,11 @@
             <input
               type="file"
               (change)="onCarouselImageSelected($event)"
-              class="ml-4"
+              class="w-full sm:w-auto sm:ml-4"
             />
           </div>
 
-          <div class="flex gap-4">
+          <div class="flex flex-col sm:flex-row gap-4">
             <mat-form-field class="flex-1">
               <mat-label>Title</mat-label>
               <input matInput [(ngModel)]="carouselItem.title" maxlength="50" />
@@ -359,34 +369,35 @@
               mat-raised-button
               color="primary"
               (click)="addCarouselItem()"
-              class="mt-2"
+              class="w-full sm:w-auto sm:mt-2"
             >
               Add
             </button>
           </div>
 
-          <div class="bg-gray-200 rounded-lg p-4 max-h-[300px] overflow-y-auto">
+          <div class="bg-gray-200 rounded-lg p-1 max-h-[300px] overflow-y-auto">
             <div
               *ngFor="let item of newArticle.content.values; let i = index"
-              class="flex mb-4"
+              class="flex flex-col sm:flex-row mb-4 gap-2"
             >
               <img
                 [src]="getImageUrl(item.image)"
-                class="max-w-[100px] max-h-[100px]"
+                class="max-w-[100px] max-h-[100px] sm:max-w-[100px] sm:max-h-[100px]"
                 *ngIf="item.image"
               />
-              <div class="flex-1 ml-4">
-                <div class="flex justify-between">
-                  <span>{{ item.title }}</span>
+              <div class="flex-1 sm:ml-4">
+                <div class="flex flex-col sm:flex-row sm:justify-between gap-2">
+                  <span class="break-words">{{ item.title }}</span>
                   <button
                     mat-icon-button
                     color="warn"
                     (click)="removeCarouselItem(i)"
+                    class="self-start sm:self-auto"
                   >
                     <mat-icon>delete</mat-icon>
                   </button>
                 </div>
-                <p class="text-sm">{{ item.description }}</p>
+                <p class="text-sm break-words">{{ item.description }}</p>
               </div>
             </div>
           </div>
@@ -409,7 +420,7 @@
         <h6 class="font-bold mb-4">Landing Pages</h6>
 
         <!-- Add New Landing Page -->
-        <div class="flex gap-2 mb-4">
+        <div class="flex flex-col sm:flex-row gap-2 mb-4">
           <mat-form-field class="flex-grow">
             <mat-label>New Landing Page Name</mat-label>
             <input matInput [(ngModel)]="newLandingPageName" maxlength="15" />
@@ -419,6 +430,7 @@
             color="primary"
             (click)="addLandingPage()"
             [disabled]="!newLandingPageName"
+            class="w-full sm:w-auto"
           >
             Add
           </button>
@@ -437,12 +449,16 @@
     </div>
 
     <!-- Right Column: Current Landing Page Content -->
-    <div class="p-4">
-      <div class="flex justify-between items-center mb-4">
+    <div class="p-1">
+      <div
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4"
+      >
         <h6 class="font-bold">{{ currentLandingPage }}</h6>
 
         <!-- Landing Page Options -->
-        <div class="flex gap-4 items-center">
+        <div
+          class="flex flex-col sm:flex-row gap-4 items-start sm:items-center w-full sm:w-auto"
+        >
           <mat-slide-toggle
             [(ngModel)]="currentLandingPageSettings.miniHeader"
             (change)="onMiniHeaderToggle()"
@@ -460,7 +476,7 @@
       </div>
 
       <!-- Articles List -->
-      <div class="overflow-y-auto max-h-[500px]">
+      <div class="overflow-y-auto max-h-[400px] sm:max-h-[500px]">
         <app-segment
           *ngFor="let article of currentArticles; let i = index"
           [article]="article"
