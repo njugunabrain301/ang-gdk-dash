@@ -1,0 +1,14 @@
+/* Make time inputs more clickable */
+input[type="time"] {
+  cursor: pointer;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+}
+
+input[type="time"]:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

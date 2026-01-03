@@ -10,6 +10,7 @@ import { ProfileInfoComponent } from '../../components/profile-info/profile-info
 import { PoliciesComponent } from '../../components/policies/policies.component';
 import { DeliveriesComponent } from '../../components/shipping/shipping.component';
 import { PaymentComponent } from '../../components/payments/payments.component';
+import { AdvancedComponent } from '../../components/advanced/advanced.component';
 
 @Component({
   selector: 'app-profile',
@@ -27,6 +28,7 @@ import { PaymentComponent } from '../../components/payments/payments.component';
     PoliciesComponent,
     DeliveriesComponent,
     PaymentComponent,
+    AdvancedComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

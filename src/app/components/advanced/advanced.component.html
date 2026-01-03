@@ -1,0 +1,295 @@
+<div class="p-6">
+  <!-- Loading State -->
+  <div
+    *ngIf="isInitializing"
+    class="flex justify-center items-center min-h-[200px]"
+  >
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isInitializing" class="space-y-6">
+    <!-- Social Media Credentials Card -->
+    <mat-card class="bg-white shadow-lg w-full">
+      <div class="flex items-center justify-between p-4 border-b">
+        <h5 class="text-xl font-semibold">Social Media Credentials</h5>
+        <p class="text-sm text-gray-600">
+          Enter credentials to enable automated posting
+        </p>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <!-- Facebook Page ID -->
+        <mat-form-field class="w-full" appearance="fill">
+          <mat-label>Facebook Page ID</mat-label>
+          <input
+            matInput
+            [(ngModel)]="facebookPageId"
+            placeholder="Enter your Facebook Page ID"
+          />
+          <mat-icon matSuffix>facebook</mat-icon>
+        </mat-form-field>
+
+        <!-- Instagram Business Account ID -->
+        <mat-form-field class="w-full" appearance="fill">
+          <mat-label>Instagram Business Account ID</mat-label>
+          <input
+            matInput
+            [(ngModel)]="instagramAccountId"
+            placeholder="Enter your Instagram Business Account ID"
+          />
+          <mat-icon matSuffix>photo_camera</mat-icon>
+        </mat-form-field>
+
+        <!-- Facebook Access Token -->
+        <mat-form-field class="w-full" appearance="fill">
+          <mat-label>Meta API Key (Facebook Access Token)</mat-label>
+          <input
+            matInput
+            type="password"
+            [(ngModel)]="facebookAccessToken"
+            placeholder="Enter your Facebook Access Token"
+          />
+          <mat-icon matSuffix>vpn_key</mat-icon>
+          <mat-hint>This token is also used for Instagram posting</mat-hint>
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <!-- Posting Schedule Card -->
+    <mat-card class="bg-white shadow-lg w-full">
+      <div class="flex items-center justify-between p-4 border-b">
+        <h5 class="text-xl font-semibold">Posting Schedule</h5>
+        <div class="flex space-x-2">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="updateSchedule()"
+            [disabled]="isLoading || !hasChanges()"
+          >
+            <mat-icon *ngIf="isLoading">hourglass_empty</mat-icon>
+            <mat-icon *ngIf="!isLoading">save</mat-icon>
+            Save
+          </button>
+          <button
+            mat-raised-button
+            color="warn"
+            (click)="cancelChanges()"
+            [disabled]="!hasChanges()"
+          >
+            <mat-icon>close</mat-icon>
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- Status Toggle -->
+        <div class="p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-sm font-medium">Schedule Status</span>
+              <p class="mt-1 text-sm text-gray-600">
+                {{
+                  schedule.status === "active"
+                    ? "Automated posting is enabled"
+                    : "Automated posting is paused"
+                }}
+              </p>
+            </div>
+            <mat-slide-toggle
+              [(ngModel)]="schedule.status"
+              [checked]="schedule.status === 'active'"
+              (change)="schedule.status = $event.checked ? 'active' : 'paused'"
+            ></mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Timezone -->
+        <mat-form-field class="w-full" appearance="fill">
+          <mat-label>Timezone</mat-label>
+          <mat-select [(ngModel)]="schedule.timezone">
+            <mat-option value="Africa/Nairobi">Africa/Nairobi (EAT)</mat-option>
+            <mat-option value="Africa/Dar_es_Salaam"
+              >Africa/Dar es Salaam (EAT)</mat-option
+            >
+            <mat-option value="Africa/Kampala">Africa/Kampala (EAT)</mat-option>
+            <mat-option value="UTC">UTC</mat-option>
+            <mat-option value="America/New_York"
+              >America/New York (EST)</mat-option
+            >
+            <mat-option value="Europe/London">Europe/London (GMT)</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Facebook Post Times -->
+        <div class="space-y-4">
+          <h6 class="text-md font-medium text-gray-700">Facebook Post Times</h6>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field class="w-full" appearance="fill">
+              <mat-label>First Post Time</mat-label>
+              <input
+                matInput
+                type="time"
+                [(ngModel)]="facebookPostTime1"
+                placeholder="HH:mm (e.g., 09:00)"
+                #facebookTimeInput1
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="facebookTimeInput1.focus(); facebookTimeInput1.showPicker?.()"
+                [attr.aria-label]="'Open time picker'"
+              >
+                <mat-icon>schedule</mat-icon>
+              </button>
+              <mat-hint>First daily post time (24-hour format)</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field class="w-full" appearance="fill">
+              <mat-label>Second Post Time</mat-label>
+              <input
+                matInput
+                type="time"
+                [(ngModel)]="facebookPostTime2"
+                placeholder="HH:mm (e.g., 15:00)"
+                #facebookTimeInput2
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="facebookTimeInput2.focus(); facebookTimeInput2.showPicker?.()"
+                [attr.aria-label]="'Open time picker'"
+              >
+                <mat-icon>schedule</mat-icon>
+              </button>
+              <mat-hint>Second daily post time (24-hour format)</mat-hint>
+            </mat-form-field>
+          </div>
+          <div class="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg">
+            <mat-icon class="text-blue-600">info</mat-icon>
+            <div class="text-sm">
+              <p class="font-medium text-blue-900">Next Run</p>
+              <p class="text-blue-700">
+                {{ formatDate(schedule.facebookNextRunAt) }}
+              </p>
+              <p class="text-xs text-blue-600 mt-1">
+                Posts today: {{ schedule.facebookPostsMadeToday }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instagram Post Times -->
+        <div class="space-y-4">
+          <h6 class="text-md font-medium text-gray-700">
+            Instagram Post Times
+          </h6>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field class="w-full" appearance="fill">
+              <mat-label>First Post Time</mat-label>
+              <input
+                matInput
+                type="time"
+                [(ngModel)]="instagramPostTime1"
+                placeholder="HH:mm (e.g., 10:00)"
+                #instagramTimeInput1
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="instagramTimeInput1.focus(); instagramTimeInput1.showPicker?.()"
+                [attr.aria-label]="'Open time picker'"
+              >
+                <mat-icon>schedule</mat-icon>
+              </button>
+              <mat-hint>First daily post time (24-hour format)</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field class="w-full" appearance="fill">
+              <mat-label>Second Post Time</mat-label>
+              <input
+                matInput
+                type="time"
+                [(ngModel)]="instagramPostTime2"
+                placeholder="HH:mm (e.g., 16:00)"
+                #instagramTimeInput2
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="instagramTimeInput2.focus(); instagramTimeInput2.showPicker?.()"
+                [attr.aria-label]="'Open time picker'"
+              >
+                <mat-icon>schedule</mat-icon>
+              </button>
+              <mat-hint>Second daily post time (24-hour format)</mat-hint>
+            </mat-form-field>
+          </div>
+          <div class="flex items-center space-x-2 p-4 bg-pink-50 rounded-lg">
+            <mat-icon class="text-pink-600">info</mat-icon>
+            <div class="text-sm">
+              <p class="font-medium text-pink-900">Next Run</p>
+              <p class="text-pink-700">
+                {{ formatDate(schedule.instagramNextRunAt) }}
+              </p>
+              <p class="text-xs text-pink-600 mt-1">
+                Posts today: {{ schedule.instagramPostsMadeToday }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Last Run Info -->
+        <div *ngIf="schedule.lastRunAt" class="p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center space-x-2">
+            <mat-icon class="text-gray-600">history</mat-icon>
+            <div class="text-sm">
+              <p class="font-medium text-gray-900">Last Run</p>
+              <p class="text-gray-700">{{ formatDate(schedule.lastRunAt) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Help/Info Card -->
+    <mat-card class="bg-blue-50 shadow-lg w-full">
+      <div class="p-6">
+        <h6 class="text-lg font-semibold text-blue-900 mb-4">
+          <mat-icon class="align-middle">help_outline</mat-icon>
+          How to Get Your Credentials
+        </h6>
+        <div class="space-y-3 text-sm text-blue-800">
+          <div>
+            <p class="font-medium">Facebook Page ID:</p>
+            <p>
+              Go to your Facebook Page → Settings → Page Info → Your Page ID
+            </p>
+          </div>
+          <div>
+            <p class="font-medium">Instagram Business Account ID:</p>
+            <p>
+              Use Facebook Graph API Explorer or Meta Business Suite to find
+              your Instagram Business Account ID
+            </p>
+          </div>
+          <div>
+            <p class="font-medium">Access Token:</p>
+            <p>
+              Generate a long-lived access token from Meta for Developers portal
+              with pages_manage_posts and instagram_basic permissions
+            </p>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+</div>
+
+<!-- Snackbar for notifications -->
+<mat-snack-bar-container></mat-snack-bar-container>

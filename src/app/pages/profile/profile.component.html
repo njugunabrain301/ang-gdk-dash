@@ -16,7 +16,7 @@
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
-          'text-blue-500 border-b-2 border-blue-500': activeTab === 'profile'
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'policies'
         }"
         (click)="setActiveTab('policies')"
       >
@@ -42,6 +42,16 @@
       >
         Payments
       </button>
+      <button
+        mat-button
+        class="flex-1 py-3"
+        [ngClass]="{
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'advanced'
+        }"
+        (click)="setActiveTab('advanced')"
+      >
+        Advanced
+      </button>
     </div>
 
     <!-- Profile Tab Content -->
@@ -64,6 +74,11 @@
     <!-- Payments Tab Content -->
     <div *ngIf="activeTab === 'payments'" class="p-1">
       <app-payment />
+    </div>
+
+    <!-- Advanced Tab Content -->
+    <div *ngIf="activeTab === 'advanced'" class="p-1">
+      <app-advanced />
     </div>
   </mat-card>
 </div>
