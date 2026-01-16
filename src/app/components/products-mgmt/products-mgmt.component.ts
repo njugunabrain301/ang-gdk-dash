@@ -50,6 +50,7 @@ import { SegmentComponent } from '../segment/segment.component';
 import { LandingPagesComponent } from './landing-pages/landing-pages.component';
 import { AiDescriptionModalComponent } from './ai-description-modal/ai-description-modal.component';
 import { from, mergeMap, switchMap, tap, toArray } from 'rxjs';
+import { ProfileInfoService } from '../../services/profile-info.service';
 
 interface ArticleBase {
   _id?: string;
@@ -430,7 +431,8 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
     private dialog: MatDialog,
     private aiService: AIGenerationService,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private profileService: ProfileInfoService
   ) {}
 
   ngOnInit() {
@@ -466,9 +468,12 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
 
   private async loadUserProfile() {
     try {
-      // const profile = await this.productService.getUserProfile().toPromise();
-      this.isBusinessAccount = this.profile.accountType === 'business';
-      this.isBusinessAccount = true;
+      const profile = await this.profileService.getAccountProfile().toPromise();
+      console.log(profile);
+      if (profile && profile.success) {
+        this.isBusinessAccount =
+          profile.data.package.toLowerCase() === 'business';
+      }
     } catch (error) {
       this.showError('Error loading user profile');
     }

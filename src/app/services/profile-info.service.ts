@@ -14,6 +14,11 @@ interface AccountProfile {
   // This is a placeholder - update with actual properties
   id: string;
   // ... other properties
+  handlingType: string;
+  package: string;
+  template: string;
+  theme: string;
+  url: string;
 }
 
 @Injectable({

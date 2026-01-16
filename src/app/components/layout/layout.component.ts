@@ -12,6 +12,7 @@ import { LoginService } from '../../services/login.service';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ProfileInfoService } from '../../services/profile-info.service';
 
 @Component({
   selector: 'app-layout',
@@ -35,16 +36,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
   businessName: string = '';
   businessLogo: string = '';
   isLargeScreen = false;
+  isBusinessPackage: boolean = false;
   private destroy$ = new Subject<void>();
 
   constructor(
     private router: Router,
     private authService: LoginService,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private profileInfoService: ProfileInfoService
   ) {}
 
   ngOnInit() {
     this.loadBusinessData();
+    this.checkBusinessPackage();
     this.breakpointObserver
       .observe([Breakpoints.Large, Breakpoints.XLarge])
       .pipe(takeUntil(this.destroy$))
@@ -68,6 +72,18 @@ export class LayoutComponent implements OnInit, OnDestroy {
       console.warn('No business data found in local storage');
       this.businessName = 'Business Name';
       this.businessLogo = 'default-logo-url';
+    }
+  }
+
+  async checkBusinessPackage() {
+    const profile = await this.profileInfoService
+      .getAccountProfile()
+      .toPromise();
+    if (profile && profile.success) {
+      this.isBusinessPackage =
+        profile.data.package.toLowerCase() === 'business';
+    } else {
+      this.isBusinessPackage = false;
     }
   }
 

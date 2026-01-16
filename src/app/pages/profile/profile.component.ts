@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -32,10 +32,33 @@ import { AdvancedComponent } from '../../components/advanced/advanced.component'
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   activeTab = 'profile';
+  isBusinessPackage: boolean = false;
+
+  ngOnInit() {
+    this.checkBusinessPackage();
+    // If activeTab is 'advanced' but user doesn't have business package, reset to 'profile'
+    if (this.activeTab === 'advanced' && !this.isBusinessPackage) {
+      this.activeTab = 'profile';
+    }
+  }
 
   setActiveTab(tab: string) {
+    // Prevent switching to 'advanced' tab if user doesn't have business package
+    if (tab === 'advanced' && !this.isBusinessPackage) {
+      return;
+    }
     this.activeTab = tab;
+  }
+
+  checkBusinessPackage() {
+    const profileData = localStorage.getItem('profile');
+    if (profileData) {
+      const profile = JSON.parse(profileData);
+      this.isBusinessPackage = profile.accountType === 'business';
+    } else {
+      this.isBusinessPackage = false;
+    }
   }
 }

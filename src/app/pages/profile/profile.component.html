@@ -43,6 +43,7 @@
         Payments
       </button>
       <button
+        *ngIf="isBusinessPackage"
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
@@ -77,7 +78,7 @@
     </div>
 
     <!-- Advanced Tab Content -->
-    <div *ngIf="activeTab === 'advanced'" class="p-1">
+    <div *ngIf="isBusinessPackage && activeTab === 'advanced'" class="p-1">
       <app-advanced />
     </div>
   </mat-card>
