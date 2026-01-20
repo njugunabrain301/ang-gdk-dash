@@ -1,0 +1,25 @@
+/* Marketing component styles */
+
+:host ::ng-deep .mat-mdc-tab-group {
+  height: 100%;
+}
+
+:host ::ng-deep .mat-mdc-tab-body-wrapper {
+  height: 100%;
+  overflow-y: auto;
+}
+
+:host ::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+/* List item hover effect */
+mat-list-item {
+  transition: background-color 0.2s ease;
+}
+
+/* Chip styling */
+mat-chip {
+  min-width: 32px;
+  justify-content: center;
+}

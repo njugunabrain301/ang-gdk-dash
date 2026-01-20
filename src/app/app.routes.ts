@@ -12,6 +12,7 @@ import { ThemesComponent } from './pages/themes/themes.component';
 import { BillingComponent } from './pages/billing/billing.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 import { StoreManagerComponent } from './pages/store-manager/store-manager.component';
+import { MarketingComponent } from './pages/marketing/marketing.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -30,6 +31,7 @@ export const routes: Routes = [
       { path: 'themes', component: ThemesComponent },
       { path: 'billing', component: BillingComponent },
       { path: 'store-manager', component: StoreManagerComponent },
+      { path: 'marketing', component: MarketingComponent },
     ],
     canActivate: [isLoggedIn],
   },

@@ -15,6 +15,9 @@ export interface ScheduleData {
   facebookPageId?: string | null;
   facebookAccessToken?: string | null;
   instagramAccountId?: string | null;
+  metaUserAccessToken?: string | null;
+  facebookAdAccountId?: string | null;
+  facebookPixelId?: string | null;
 }
 
 export interface ScheduleUpdateRequest {
@@ -25,6 +28,9 @@ export interface ScheduleUpdateRequest {
   facebookAccessToken?: string | null;
   instagramAccountId?: string | null;
   status?: 'active' | 'paused';
+  metaUserAccessToken?: string | null;
+  facebookAdAccountId?: string | null;
+  facebookPixelId?: string | null;
 }
 
 @Injectable({

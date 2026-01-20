@@ -12,9 +12,7 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ScheduleService, ScheduleData } from '../../services/schedule.service';
+import { ScheduleService } from '../../services/schedule.service';
 
 @Component({
   selector: 'app-advanced',
@@ -29,43 +27,28 @@ import { ScheduleService, ScheduleData } from '../../services/schedule.service';
     MatFormFieldModule,
     MatIconModule,
     MatSelectModule,
-    MatSlideToggleModule,
-    MatProgressSpinnerModule,
   ],
   providers: [MatSnackBarConfig],
   templateUrl: './advanced.component.html',
   styleUrl: './advanced.component.css',
 })
 export class AdvancedComponent implements OnInit {
-  schedule: ScheduleData = {
-    timezone: 'Africa/Nairobi',
-    facebookPostTimes: [],
-    facebookPostsMadeToday: 0,
-    facebookNextRunAt: null,
-    instagramPostTimes: [],
-    instagramPostsMadeToday: 0,
-    instagramNextRunAt: null,
-    lastRunAt: null,
-    status: 'paused',
-  };
-
-  // Form fields for time inputs (ensures we always have 2 inputs)
-  facebookPostTime1: string = '';
-  facebookPostTime2: string = '';
-  instagramPostTime1: string = '';
-  instagramPostTime2: string = '';
-
   // Form fields
   facebookPageId: string = '';
   instagramAccountId: string = '';
   facebookAccessToken: string = '';
+  metaUserAccessToken: string = '';
+  facebookAdAccountId: string = '';
+  facebookPixelId: string = '';
 
   // Original state for comparison
-  private originalSchedule: ScheduleData | null = null;
   private originalCredentials: {
     facebookPageId: string;
     instagramAccountId: string;
     facebookAccessToken: string;
+    metaUserAccessToken: string;
+    facebookAdAccountId: string;
+    facebookPixelId: string;
   } | null = null;
 
   isLoading = false;
@@ -75,44 +58,33 @@ export class AdvancedComponent implements OnInit {
     private scheduleService: ScheduleService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {  }
 
   ngOnInit() {
-    this.loadSchedule();
+    this.loadCredentials();
   }
 
-  loadSchedule() {
+  loadCredentials() {
     this.isInitializing = true;
     this.scheduleService.getSchedule().subscribe({
       next: (res) => {
         if (res.success) {
-          this.schedule = res.data;
-
-          // Ensure arrays exist
-          if (!this.schedule.facebookPostTimes) {
-            this.schedule.facebookPostTimes = [];
-          }
-          if (!this.schedule.instagramPostTimes) {
-            this.schedule.instagramPostTimes = [];
-          }
-
           // Populate form fields with values from response
           this.facebookPageId = res.data.facebookPageId || '';
           this.instagramAccountId = res.data.instagramAccountId || '';
           this.facebookAccessToken = res.data.facebookAccessToken || '';
-
-          // Populate time input fields from arrays
-          this.facebookPostTime1 = this.schedule.facebookPostTimes[0] || '';
-          this.facebookPostTime2 = this.schedule.facebookPostTimes[1] || '';
-          this.instagramPostTime1 = this.schedule.instagramPostTimes[0] || '';
-          this.instagramPostTime2 = this.schedule.instagramPostTimes[1] || '';
+          this.metaUserAccessToken = res.data.metaUserAccessToken || '';
+          this.facebookAdAccountId = res.data.facebookAdAccountId || '';
+          this.facebookPixelId = res.data.facebookPixelId || '';
 
           // Store original state
-          this.originalSchedule = JSON.parse(JSON.stringify(res.data));
           this.originalCredentials = {
             facebookPageId: this.facebookPageId,
             instagramAccountId: this.instagramAccountId,
             facebookAccessToken: this.facebookAccessToken,
+            metaUserAccessToken: this.metaUserAccessToken,
+            facebookAdAccountId: this.facebookAdAccountId,
+            facebookPixelId: this.facebookPixelId,
           };
 
           this.isInitializing = false;
@@ -120,38 +92,18 @@ export class AdvancedComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error loading schedule:', error);
-        this.showSnackbar('Error loading schedule settings', 'error');
+        console.error('Error loading credentials:', error);
+        this.showSnackbar('Error loading credentials', 'error');
         this.isInitializing = false;
         this.cdr.detectChanges();
       },
     });
   }
 
-  updateSchedule() {
-    if (!this.validateSchedule()) {
-      return;
-    }
-
+  updateCredentials() {
     this.isLoading = true;
 
-    // Build arrays from time inputs, filtering out empty values
-    const facebookPostTimes: string[] = [];
-    if (this.facebookPostTime1) facebookPostTimes.push(this.facebookPostTime1);
-    if (this.facebookPostTime2) facebookPostTimes.push(this.facebookPostTime2);
-
-    const instagramPostTimes: string[] = [];
-    if (this.instagramPostTime1)
-      instagramPostTimes.push(this.instagramPostTime1);
-    if (this.instagramPostTime2)
-      instagramPostTimes.push(this.instagramPostTime2);
-
-    const updateData: any = {
-      timezone: this.schedule.timezone,
-      facebookPostTimes: facebookPostTimes,
-      instagramPostTimes: instagramPostTimes,
-      status: this.schedule.status,
-    };
+    const updateData: any = {};
 
     // Include credentials if they've been provided (not empty)
     // This allows updating credentials or preserving existing ones
@@ -164,49 +116,46 @@ export class AdvancedComponent implements OnInit {
     if (this.facebookAccessToken) {
       updateData.facebookAccessToken = this.facebookAccessToken;
     }
+    if (this.metaUserAccessToken) {
+      updateData.metaUserAccessToken = this.metaUserAccessToken;
+    }
+    if (this.facebookAdAccountId) {
+      updateData.facebookAdAccountId = this.facebookAdAccountId;
+    }
+    if (this.facebookPixelId) {
+      updateData.facebookPixelId = this.facebookPixelId;
+    }
 
     this.scheduleService.updateSchedule(updateData).subscribe({
       next: (res) => {
         if (res.success) {
-          this.schedule = res.data;
-
-          // Ensure arrays exist
-          if (!this.schedule.facebookPostTimes) {
-            this.schedule.facebookPostTimes = [];
-          }
-          if (!this.schedule.instagramPostTimes) {
-            this.schedule.instagramPostTimes = [];
-          }
-
-          // Populate time input fields from arrays
-          this.facebookPostTime1 = this.schedule.facebookPostTimes[0] || '';
-          this.facebookPostTime2 = this.schedule.facebookPostTimes[1] || '';
-          this.instagramPostTime1 = this.schedule.instagramPostTimes[0] || '';
-          this.instagramPostTime2 = this.schedule.instagramPostTimes[1] || '';
-
-          this.originalSchedule = JSON.parse(JSON.stringify(res.data));
-
           // Populate credential fields from response (preserves existing values)
           this.facebookPageId = res.data.facebookPageId || '';
           this.instagramAccountId = res.data.instagramAccountId || '';
           this.facebookAccessToken = res.data.facebookAccessToken || '';
+          this.metaUserAccessToken = res.data.metaUserAccessToken || '';
+          this.facebookAdAccountId = res.data.facebookAdAccountId || '';
+          this.facebookPixelId = res.data.facebookPixelId || '';
 
           // Update original credentials to match saved values
           this.originalCredentials = {
             facebookPageId: this.facebookPageId,
             instagramAccountId: this.instagramAccountId,
             facebookAccessToken: this.facebookAccessToken,
+            metaUserAccessToken: this.metaUserAccessToken,
+            facebookAdAccountId: this.facebookAdAccountId,
+            facebookPixelId: this.facebookPixelId,
           };
 
-          this.showSnackbar('Schedule updated successfully', 'success');
+          this.showSnackbar('Credentials updated successfully', 'success');
         }
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Error updating schedule:', error);
+        console.error('Error updating credentials:', error);
         this.showSnackbar(
-          error.error?.message || 'Error updating schedule',
+          error.error?.message || 'Error updating credentials',
           'error'
         );
         this.isLoading = false;
@@ -215,111 +164,45 @@ export class AdvancedComponent implements OnInit {
     });
   }
 
-  cancelChanges() {
-    if (this.originalSchedule) {
-      this.schedule = JSON.parse(JSON.stringify(this.originalSchedule));
-
-      // Ensure arrays exist
-      if (!this.schedule.facebookPostTimes) {
-        this.schedule.facebookPostTimes = [];
-      }
-      if (!this.schedule.instagramPostTimes) {
-        this.schedule.instagramPostTimes = [];
-      }
-
-      // Restore time input fields
-      this.facebookPostTime1 = this.schedule.facebookPostTimes[0] || '';
-      this.facebookPostTime2 = this.schedule.facebookPostTimes[1] || '';
-      this.instagramPostTime1 = this.schedule.instagramPostTimes[0] || '';
-      this.instagramPostTime2 = this.schedule.instagramPostTimes[1] || '';
-    }
+  cancelCredentialChanges() {
     // Restore original credential values
     if (this.originalCredentials) {
       this.facebookPageId = this.originalCredentials.facebookPageId;
       this.instagramAccountId = this.originalCredentials.instagramAccountId;
       this.facebookAccessToken = this.originalCredentials.facebookAccessToken;
+      this.metaUserAccessToken = this.originalCredentials.metaUserAccessToken;
+      this.facebookAdAccountId = this.originalCredentials.facebookAdAccountId;
+      this.facebookPixelId = this.originalCredentials.facebookPixelId;
     } else {
       this.facebookPageId = '';
       this.instagramAccountId = '';
       this.facebookAccessToken = '';
+      this.metaUserAccessToken = '';
+      this.facebookAdAccountId = '';
+      this.facebookPixelId = '';
     }
   }
 
-  hasChanges(): boolean {
-    // Check if time inputs have changed
-    const currentFacebookTimes = [
-      this.facebookPostTime1 || null,
-      this.facebookPostTime2 || null,
-    ].filter((t) => t !== null);
-    const originalFacebookTimes =
-      this.originalSchedule?.facebookPostTimes || [];
-    const facebookTimesChanged =
-      JSON.stringify(currentFacebookTimes.sort()) !==
-      JSON.stringify(originalFacebookTimes.sort());
+  hasCredentialChanges(): boolean {
+    if (!this.originalCredentials) {
+      return !!(
+        this.facebookPageId ||
+        this.instagramAccountId ||
+        this.facebookAccessToken ||
+        this.metaUserAccessToken ||
+        this.facebookAdAccountId ||
+        this.facebookPixelId
+      );
+    }
 
-    const currentInstagramTimes = [
-      this.instagramPostTime1 || null,
-      this.instagramPostTime2 || null,
-    ].filter((t) => t !== null);
-    const originalInstagramTimes =
-      this.originalSchedule?.instagramPostTimes || [];
-    const instagramTimesChanged =
-      JSON.stringify(currentInstagramTimes.sort()) !==
-      JSON.stringify(originalInstagramTimes.sort());
-
-    const scheduleChanged =
-      (this.originalSchedule &&
-        (this.schedule.timezone !== this.originalSchedule.timezone ||
-          this.schedule.status !== this.originalSchedule.status)) ||
-      facebookTimesChanged ||
-      instagramTimesChanged;
-
-    const credentialsChanged = !!(
-      this.facebookPageId ||
-      this.instagramAccountId ||
-      this.facebookAccessToken
+    return (
+      this.facebookPageId !== this.originalCredentials.facebookPageId ||
+      this.instagramAccountId !== this.originalCredentials.instagramAccountId ||
+      this.facebookAccessToken !== this.originalCredentials.facebookAccessToken ||
+      this.metaUserAccessToken !== this.originalCredentials.metaUserAccessToken ||
+      this.facebookAdAccountId !== this.originalCredentials.facebookAdAccountId ||
+      this.facebookPixelId !== this.originalCredentials.facebookPixelId
     );
-
-    return scheduleChanged || credentialsChanged;
-  }
-
-  validateSchedule(): boolean {
-    // Validate time format (HH:mm)
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-
-    // Validate Facebook times
-    if (this.facebookPostTime1 && !timeRegex.test(this.facebookPostTime1)) {
-      this.showSnackbar(
-        'Facebook post time 1 must be in HH:mm format (e.g., 09:00)',
-        'error'
-      );
-      return false;
-    }
-    if (this.facebookPostTime2 && !timeRegex.test(this.facebookPostTime2)) {
-      this.showSnackbar(
-        'Facebook post time 2 must be in HH:mm format (e.g., 15:00)',
-        'error'
-      );
-      return false;
-    }
-
-    // Validate Instagram times
-    if (this.instagramPostTime1 && !timeRegex.test(this.instagramPostTime1)) {
-      this.showSnackbar(
-        'Instagram post time 1 must be in HH:mm format (e.g., 10:00)',
-        'error'
-      );
-      return false;
-    }
-    if (this.instagramPostTime2 && !timeRegex.test(this.instagramPostTime2)) {
-      this.showSnackbar(
-        'Instagram post time 2 must be in HH:mm format (e.g., 16:00)',
-        'error'
-      );
-      return false;
-    }
-
-    return true;
   }
 
   showSnackbar(message: string, type: 'success' | 'error') {
@@ -330,9 +213,4 @@ export class AdvancedComponent implements OnInit {
     });
   }
 
-  formatDate(dateString: string | null): string {
-    if (!dateString) return 'Not scheduled';
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  }
 }

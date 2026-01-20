@@ -89,6 +89,15 @@
           <mat-icon class="mr-3 text-gray-400">smart_toy</mat-icon>
           <span>Store Manager</span>
         </a>
+        <a
+          *ngIf="isBusinessPackage"
+          routerLink="/marketing"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">campaign</mat-icon>
+          <span>Marketing</span>
+        </a>
         <!--
 
         <a

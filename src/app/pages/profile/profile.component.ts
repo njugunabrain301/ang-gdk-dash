@@ -11,6 +11,7 @@ import { PoliciesComponent } from '../../components/policies/policies.component'
 import { DeliveriesComponent } from '../../components/shipping/shipping.component';
 import { PaymentComponent } from '../../components/payments/payments.component';
 import { AdvancedComponent } from '../../components/advanced/advanced.component';
+import { ProfileInfoService } from '../../services/profile-info.service';
 
 @Component({
   selector: 'app-profile',
@@ -36,6 +37,8 @@ export class ProfileComponent implements OnInit {
   activeTab = 'profile';
   isBusinessPackage: boolean = false;
 
+  constructor(private profileInfoService: ProfileInfoService) {}
+
   ngOnInit() {
     this.checkBusinessPackage();
     // If activeTab is 'advanced' but user doesn't have business package, reset to 'profile'
@@ -53,12 +56,13 @@ export class ProfileComponent implements OnInit {
   }
 
   checkBusinessPackage() {
-    const profileData = localStorage.getItem('profile');
-    if (profileData) {
-      const profile = JSON.parse(profileData);
-      this.isBusinessPackage = profile.accountType === 'business';
-    } else {
-      this.isBusinessPackage = false;
-    }
+
+    this.profileInfoService.getAccountProfile().subscribe({
+      next: (profile) => {
+        if (profile.success) {
+          this.isBusinessPackage = profile.data.package.toLowerCase() === 'business';
+        }
+      }
+    });
   }
 }

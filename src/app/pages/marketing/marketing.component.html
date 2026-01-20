@@ -1,0 +1,649 @@
+<div class="h-full flex flex-col">
+  <mat-card class="flex-1 flex flex-col overflow-hidden">
+    <div class="p-4 border-b">
+      <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">campaign</mat-icon>
+        Marketing
+      </h2>
+      <p class="text-sm text-gray-600 mt-1">
+        Manage your marketing campaigns and strategies
+      </p>
+    </div>
+
+    <div class="flex-1 overflow-auto">
+      <mat-tab-group
+        [(selectedIndex)]="selectedTabIndex"
+        (selectedIndexChange)="onTabChange($event)"
+        class="h-full"
+      >
+        <!-- Overview Tab -->
+        <mat-tab label="Overview">
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <mat-icon class="text-6xl text-gray-400 mb-4">bar_chart</mat-icon>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
+                <p class="text-gray-600">
+                  Marketing overview and statistics will be available here.
+                </p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Meta Tab -->
+        <mat-tab label="Meta">
+          <div class="p-6">
+            <div class="mb-4 flex space-x-2 border-b">
+              <button
+                (click)="selectedMetaSection = 'posts'"
+                [class.bg-blue-50]="selectedMetaSection === 'posts'"
+                [class.text-blue-600]="selectedMetaSection === 'posts'"
+                [class.border-b-2]="selectedMetaSection === 'posts'"
+                [class.border-blue-600]="selectedMetaSection === 'posts'"
+                class="px-4 py-2 font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Posts
+              </button>
+              <button
+                (click)="selectedMetaSection = 'ads'"
+                [class.bg-blue-50]="selectedMetaSection === 'ads'"
+                [class.text-blue-600]="selectedMetaSection === 'ads'"
+                [class.border-b-2]="selectedMetaSection === 'ads'"
+                [class.border-blue-600]="selectedMetaSection === 'ads'"
+                class="px-4 py-2 font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Ads
+              </button>
+            </div>
+
+            <!-- Posts Section -->
+            <div *ngIf="selectedMetaSection === 'posts'" class="max-w-6xl mx-auto">
+              <mat-card class="mb-4">
+                <div class="p-4">
+                  <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    Posting Priority Queue
+                  </h3>
+
+                  <!-- Add Product Section -->
+                  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-md font-medium text-gray-700 mb-3">
+                      Add Product to Queue
+                    </h4>
+                    <div class="flex gap-3 items-end">
+                      <mat-form-field appearance="outline" class="flex-1">
+                        <mat-label>Select Product</mat-label>
+                        <mat-select [(ngModel)]="selectedProductId">
+                          <mat-option *ngFor="let product of allProducts" [value]="product._id">
+                            {{ product.name }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="addToFront()"
+                        [disabled]="!selectedProductId || isLoadingPriorityItems"
+                        class="mb-2"
+                      >
+                        <mat-icon>arrow_upward</mat-icon>
+                        Add to Front
+                      </button>
+                      <button
+                        mat-raised-button
+                        color="accent"
+                        (click)="addToBack()"
+                        [disabled]="!selectedProductId || isLoadingPriorityItems"
+                        class="mb-2"
+                      >
+                        <mat-icon>arrow_downward</mat-icon>
+                        Add to Back
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Priority Queue List -->
+                  <div class="mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                      <h4 class="text-md font-medium text-gray-700">
+                        Priority Queue ({{ priorityItems.length }} items)
+                      </h4>
+                      <button
+                        mat-raised-button
+                        color="warn"
+                        (click)="clearQueue()"
+                        [disabled]="priorityItems.length === 0 || isLoadingPriorityItems"
+                      >
+                        <mat-icon>delete_sweep</mat-icon>
+                        Clear Queue
+                      </button>
+                    </div>
+
+                    <div *ngIf="isLoadingPriorityItems" class="text-center py-8">
+                      <mat-spinner diameter="40"></mat-spinner>
+                      <p class="mt-4 text-gray-600">Loading priority queue...</p>
+                    </div>
+
+                    <div
+                      *ngIf="!isLoadingPriorityItems && priorityItems.length === 0"
+                      class="text-center py-8 bg-gray-50 rounded-lg"
+                    >
+                      <mat-icon class="text-4xl text-gray-400 mb-2">inbox</mat-icon>
+                      <p class="text-gray-600">No products in the priority queue</p>
+                      <p class="text-sm text-gray-500 mt-1">
+                        Add products to schedule them for posting
+                      </p>
+                    </div>
+
+                    <mat-list *ngIf="!isLoadingPriorityItems && priorityItems.length > 0">
+                      <mat-list-item
+                        *ngFor="let item of priorityItems; let i = index"
+                        class="border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        <div class="flex items-center justify-between w-full py-2">
+                          <div class="flex items-center flex-1">
+                            <span
+                              class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-semibold text-sm mr-3"
+                            >
+                              {{ i + 1 }}
+                            </span>
+                            <span class="text-gray-800 font-medium">{{ item.name }}</span>
+                          </div>
+                          <mat-icon class="text-gray-400" *ngIf="i === 0">
+                            priority_high
+                          </mat-icon>
+                        </div>
+                      </mat-list-item>
+                    </mat-list>
+                  </div>
+                </div>
+              </mat-card>
+
+              <!-- Posting Schedule Card -->
+              <mat-card class="mt-4">
+                <div class="flex items-center justify-between p-4 border-b">
+                  <h3 class="text-lg font-semibold text-gray-800">Posting Schedule</h3>
+                  <div class="flex space-x-2">
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="updateSchedule()"
+                      [disabled]="isLoadingSchedule || !hasScheduleChanges()"
+                    >
+                      <mat-icon *ngIf="isLoadingSchedule">hourglass_empty</mat-icon>
+                      <mat-icon *ngIf="!isLoadingSchedule">save</mat-icon>
+                      Save
+                    </button>
+                    <button
+                      mat-raised-button
+                      color="warn"
+                      (click)="cancelScheduleChanges()"
+                      [disabled]="!hasScheduleChanges()"
+                    >
+                      <mat-icon>close</mat-icon>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+
+                <div *ngIf="isInitializingSchedule" class="text-center py-8">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <p class="mt-4 text-gray-600">Loading schedule...</p>
+                </div>
+
+                <div *ngIf="!isInitializingSchedule" class="p-6 space-y-6">
+                  <!-- Status Toggle -->
+                  <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <span class="text-sm font-medium">Schedule Status</span>
+                        <p class="mt-1 text-sm text-gray-600">
+                          {{
+                            schedule.status === "active"
+                              ? "Automated posting is enabled"
+                              : "Automated posting is paused"
+                          }}
+                        </p>
+                      </div>
+                      <mat-slide-toggle
+                        [(ngModel)]="schedule.status"
+                        [checked]="schedule.status === 'active'"
+                        (change)="schedule.status = $event.checked ? 'active' : 'paused'"
+                      ></mat-slide-toggle>
+                    </div>
+                  </div>
+
+                  <!-- Timezone -->
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Timezone</mat-label>
+                    <mat-select [(ngModel)]="schedule.timezone">
+                      <mat-option value="Africa/Nairobi">Africa/Nairobi (EAT)</mat-option>
+                      <mat-option value="Africa/Dar_es_Salaam"
+                        >Africa/Dar es Salaam (EAT)</mat-option
+                      >
+                      <mat-option value="Africa/Kampala">Africa/Kampala (EAT)</mat-option>
+                      <mat-option value="UTC">UTC</mat-option>
+                      <mat-option value="America/New_York"
+                        >America/New York (EST)</mat-option
+                      >
+                      <mat-option value="Europe/London">Europe/London (GMT)</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <!-- Facebook Post Times -->
+                  <div class="space-y-4">
+                    <h6 class="text-md font-medium text-gray-700">Facebook Post Times</h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <mat-form-field class="w-full" appearance="outline">
+                        <mat-label>First Post Time</mat-label>
+                        <input
+                          matInput
+                          type="time"
+                          [(ngModel)]="facebookPostTime1"
+                          placeholder="HH:mm (e.g., 09:00)"
+                          #facebookTimeInput1
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          type="button"
+                          (click)="facebookTimeInput1.focus(); facebookTimeInput1.showPicker?.()"
+                          [attr.aria-label]="'Open time picker'"
+                        >
+                          <mat-icon>schedule</mat-icon>
+                        </button>
+                        <mat-hint>First daily post time (24-hour format)</mat-hint>
+                      </mat-form-field>
+
+                      <mat-form-field class="w-full" appearance="outline">
+                        <mat-label>Second Post Time</mat-label>
+                        <input
+                          matInput
+                          type="time"
+                          [(ngModel)]="facebookPostTime2"
+                          placeholder="HH:mm (e.g., 15:00)"
+                          #facebookTimeInput2
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          type="button"
+                          (click)="facebookTimeInput2.focus(); facebookTimeInput2.showPicker?.()"
+                          [attr.aria-label]="'Open time picker'"
+                        >
+                          <mat-icon>schedule</mat-icon>
+                        </button>
+                        <mat-hint>Second daily post time (24-hour format)</mat-hint>
+                      </mat-form-field>
+                    </div>
+                    <div class="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg">
+                      <mat-icon class="text-blue-600">info</mat-icon>
+                      <div class="text-sm">
+                        <p class="font-medium text-blue-900">Next Run</p>
+                        <p class="text-blue-700">
+                          {{ formatDate(schedule.facebookNextRunAt) }}
+                        </p>
+                        <p class="text-xs text-blue-600 mt-1">
+                          Posts today: {{ schedule.facebookPostsMadeToday }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Instagram Post Times -->
+                  <div class="space-y-4">
+                    <h6 class="text-md font-medium text-gray-700">
+                      Instagram Post Times
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <mat-form-field class="w-full" appearance="outline">
+                        <mat-label>First Post Time</mat-label>
+                        <input
+                          matInput
+                          type="time"
+                          [(ngModel)]="instagramPostTime1"
+                          placeholder="HH:mm (e.g., 10:00)"
+                          #instagramTimeInput1
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          type="button"
+                          (click)="instagramTimeInput1.focus(); instagramTimeInput1.showPicker?.()"
+                          [attr.aria-label]="'Open time picker'"
+                        >
+                          <mat-icon>schedule</mat-icon>
+                        </button>
+                        <mat-hint>First daily post time (24-hour format)</mat-hint>
+                      </mat-form-field>
+
+                      <mat-form-field class="w-full" appearance="outline">
+                        <mat-label>Second Post Time</mat-label>
+                        <input
+                          matInput
+                          type="time"
+                          [(ngModel)]="instagramPostTime2"
+                          placeholder="HH:mm (e.g., 16:00)"
+                          #instagramTimeInput2
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          type="button"
+                          (click)="instagramTimeInput2.focus(); instagramTimeInput2.showPicker?.()"
+                          [attr.aria-label]="'Open time picker'"
+                        >
+                          <mat-icon>schedule</mat-icon>
+                        </button>
+                        <mat-hint>Second daily post time (24-hour format)</mat-hint>
+                      </mat-form-field>
+                    </div>
+                    <div class="flex items-center space-x-2 p-4 bg-pink-50 rounded-lg">
+                      <mat-icon class="text-pink-600">info</mat-icon>
+                      <div class="text-sm">
+                        <p class="font-medium text-pink-900">Next Run</p>
+                        <p class="text-pink-700">
+                          {{ formatDate(schedule.instagramNextRunAt) }}
+                        </p>
+                        <p class="text-xs text-pink-600 mt-1">
+                          Posts today: {{ schedule.instagramPostsMadeToday }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Last Run Info -->
+                  <div *ngIf="schedule.lastRunAt" class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-2">
+                      <mat-icon class="text-gray-600">history</mat-icon>
+                      <div class="text-sm">
+                        <p class="font-medium text-gray-900">Last Run</p>
+                        <p class="text-gray-700">{{ formatDate(schedule.lastRunAt) }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-card>
+            </div>
+
+            <!-- Ads Section -->
+            <div *ngIf="selectedMetaSection === 'ads'" class="max-w-6xl mx-auto space-y-6">
+              <mat-card>
+                <div class="p-6">
+                  <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <mat-icon class="mr-2 text-blue-600">ads_click</mat-icon>
+                    Create Facebook Ad Campaign
+                  </h3>
+
+                  <form (ngSubmit)="createAd()" class="space-y-8">
+                    <!-- Campaign Section -->
+                    <div class="border-b pb-6">
+                      <h4 class="text-lg font-semibold text-gray-700 mb-4">Campaign Details</h4>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Campaign Name *</mat-label>
+                          <input matInput [(ngModel)]="adForm.campaign.name" name="campaignName" required />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Objective *</mat-label>
+                          <mat-select [(ngModel)]="adForm.campaign.objective" name="objective" required>
+                            <mat-option *ngFor="let obj of objectiveOptions" [value]="obj">
+                              {{ obj }}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Status *</mat-label>
+                          <mat-select [(ngModel)]="adForm.campaign.status" name="campaignStatus" required>
+                            <mat-option value="PAUSED">Paused</mat-option>
+                            <mat-option value="ACTIVE">Active</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Buying Type *</mat-label>
+                          <input matInput [(ngModel)]="adForm.campaign.buying_type" name="buyingType" value="AUCTION" readonly />
+                        </mat-form-field>
+                      </div>
+                    </div>
+
+                    <!-- Ad Set Section -->
+                    <div class="border-b pb-6">
+                      <h4 class="text-lg font-semibold text-gray-700 mb-4">Ad Set Details</h4>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Ad Set Name *</mat-label>
+                          <input matInput [(ngModel)]="adForm.adset.name" name="adsetName" required />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Daily Budget (in cents) *</mat-label>
+                          <input matInput type="number" [(ngModel)]="adForm.adset.daily_budget" name="dailyBudget" required min="1" />
+                          <mat-hint>e.g., 13000 = $130.00</mat-hint>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Billing Event *</mat-label>
+                          <input matInput [(ngModel)]="adForm.adset.billing_event" name="billingEvent" value="IMPRESSIONS" readonly />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Optimization Goal *</mat-label>
+                          <input matInput [(ngModel)]="adForm.adset.optimization_goal" name="optimizationGoal" value="OFFSITE_CONVERSIONS" readonly />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Bid Strategy *</mat-label>
+                          <input matInput [(ngModel)]="adForm.adset.bid_strategy" name="bidStrategy" value="LOWEST_COST_WITHOUT_CAP" readonly />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-full">
+                          <mat-label>Ad Set Status *</mat-label>
+                          <mat-select [(ngModel)]="adForm.adset.status" name="adsetStatus" required>
+                            <mat-option value="PAUSED">Paused</mat-option>
+                            <mat-option value="ACTIVE">Active</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                      </div>
+
+                      <!-- Targeting -->
+                      <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <h5 class="text-md font-medium text-gray-700 mb-3">Targeting</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Min Age</mat-label>
+                            <input matInput type="number" [(ngModel)]="adForm.adset.targeting.age_min" name="ageMin" min="13" max="65" />
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Max Age</mat-label>
+                            <input matInput type="number" [(ngModel)]="adForm.adset.targeting.age_max" name="ageMax" min="13" max="65" />
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Countries</mat-label>
+                            <mat-select [(ngModel)]="adForm.adset.targeting.geo_locations.countries" name="countries" multiple>
+                              <mat-option *ngFor="let country of availableCountries" [value]="country">
+                                {{ country }}
+                              </mat-option>
+                            </mat-select>
+                            <mat-hint>Select target countries</mat-hint>
+                          </mat-form-field>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Ad Creatives Section -->
+                    <div>
+                      <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-gray-700">Ad Creatives</h4>
+                        <button
+                          type="button"
+                          mat-raised-button
+                          color="accent"
+                          (click)="addAdCreative()"
+                        >
+                          <mat-icon>add</mat-icon>
+                          Add Creative
+                        </button>
+                      </div>
+
+                      <div *ngFor="let ad of adForm.ads; let i = index" class="mb-6 p-4 border rounded-lg">
+                        <div class="flex justify-between items-center mb-4">
+                          <h5 class="text-md font-medium text-gray-700">Ad Creative {{ i + 1 }}</h5>
+                          <button
+                            *ngIf="adForm.ads.length > 1"
+                            type="button"
+                            mat-icon-button
+                            color="warn"
+                            (click)="removeAdCreative(i)"
+                          >
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Ad Name *</mat-label>
+                            <input matInput [(ngModel)]="ad.name" [name]="'adName' + i" required />
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Ad Status *</mat-label>
+                            <mat-select [(ngModel)]="ad.status" [name]="'adStatus' + i" required>
+                              <mat-option value="PAUSED">Paused</mat-option>
+                              <mat-option value="ACTIVE">Active</mat-option>
+                            </mat-select>
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                            <mat-label>Link URL *</mat-label>
+                            <input matInput type="url" [(ngModel)]="ad.creative.link" [name]="'adLink' + i" required />
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                            <mat-label>Message *</mat-label>
+                            <textarea matInput rows="3" [(ngModel)]="ad.creative.message" [name]="'adMessage' + i" required></textarea>
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Headline *</mat-label>
+                            <input matInput [(ngModel)]="ad.creative.headline" [name]="'adHeadline' + i" required />
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Call to Action *</mat-label>
+                            <mat-select [(ngModel)]="ad.creative.call_to_action" [name]="'adCTA' + i" required>
+                              <mat-option *ngFor="let cta of callToActionOptions" [value]="cta">
+                                {{ cta }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                            <mat-label>Description *</mat-label>
+                            <textarea matInput rows="2" [(ngModel)]="ad.creative.description" [name]="'adDescription' + i" required></textarea>
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                            <mat-label>Image URL *</mat-label>
+                            <input matInput type="url" [(ngModel)]="ad.creative.image_url" [name]="'adImageUrl' + i" required />
+                            <mat-hint>Enter the full URL to the ad image</mat-hint>
+                          </mat-form-field>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                      <button
+                        type="button"
+                        mat-raised-button
+                        (click)="resetAdForm()"
+                        [disabled]="isLoadingAd"
+                      >
+                        Reset Form
+                      </button>
+                      <button
+                        type="submit"
+                        mat-raised-button
+                        color="primary"
+                        [disabled]="isLoadingAd"
+                      >
+                        <mat-icon *ngIf="isLoadingAd">hourglass_empty</mat-icon>
+                        <mat-icon *ngIf="!isLoadingAd">campaign</mat-icon>
+                        {{ isLoadingAd ? 'Creating...' : 'Create Ad Campaign' }}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </mat-card>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Twitter Tab -->
+        <mat-tab label="Twitter">
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <mat-icon class="text-6xl text-gray-400 mb-4">chat</mat-icon>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
+                <p class="text-gray-600">
+                  Twitter marketing features will be available here.
+                </p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- TikTok Tab -->
+        <mat-tab label="TikTok">
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <mat-icon class="text-6xl text-gray-400 mb-4">video_library</mat-icon>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
+                <p class="text-gray-600">
+                  TikTok marketing features will be available here.
+                </p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- YouTube Tab -->
+        <mat-tab label="YouTube">
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <mat-icon class="text-6xl text-gray-400 mb-4">play_circle</mat-icon>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
+                <p class="text-gray-600">
+                  YouTube marketing features will be available here.
+                </p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Google Tab -->
+        <mat-tab label="Google">
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <mat-icon class="text-6xl text-gray-400 mb-4">search</mat-icon>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
+                <p class="text-gray-600">
+                  Google marketing features will be available here.
+                </p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </mat-card>
+</div>
