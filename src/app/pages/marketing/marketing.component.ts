@@ -134,14 +134,12 @@ export class MarketingComponent implements OnInit {
     'CONTACT_US',
   ];
   objectiveOptions = [
-    'LINK_CLICKS',
-    'CONVERSIONS',
-    'TRAFFIC',
-    'ENGAGEMENT',
-    'APP_INSTALLS',
-    'VIDEO_VIEWS',
-    'LEAD_GENERATION',
-    'MESSAGES',
+    'OUTCOME_LEADS',
+'OUTCOME_SALES',
+'OUTCOME_ENGAGEMENT',
+'OUTCOME_AWARENESS',
+'OUTCOME_TRAFFIC',
+'OUTCOME_APP_PROMOTION',
   ];
 
   constructor(
