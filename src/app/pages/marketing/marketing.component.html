@@ -464,7 +464,7 @@
 
                           <mat-form-field appearance="outline" class="w-full">
                             <mat-label>Countries</mat-label>
-                            <mat-select [(ngModel)]="adForm.adset.targeting.geo_locations.countries" name="countries" multiple>
+                            <mat-select [(ngModel)]="adForm.adset.targeting.geo_locations!.countries" name="countries" multiple>
                               <mat-option *ngFor="let country of availableCountries" [value]="country">
                                 {{ country }}
                               </mat-option>
