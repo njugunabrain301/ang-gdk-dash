@@ -13,6 +13,10 @@
   width: 100%;
 }
 
+:host ::ng-deep .mat-mdc-form-field.ml-auto {
+  width: 192px !important;
+}
+
 /* List item hover effect */
 mat-list-item {
   transition: background-color 0.2s ease;
@@ -22,4 +26,14 @@ mat-list-item {
 mat-chip {
   min-width: 32px;
   justify-content: center;
+}
+
+/* Override Material typography for h2 and h3 tags */
+:host h2,
+:host h3, :host h4, :host h5, :host h6 {
+  font: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  font-family: inherit !important;
 }

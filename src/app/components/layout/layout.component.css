@@ -99,7 +99,7 @@
     left: 0;
     height: calc(100% - 60px);
     transform: translateX(-100%);
-    z-index: 1000;
+    z-index: 10;
   }
 
   .sidebar.open {

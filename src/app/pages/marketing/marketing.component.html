@@ -1,61 +1,135 @@
-<div class="h-full flex flex-col">
-  <mat-card class="flex-1 flex flex-col overflow-hidden">
-    <div class="p-4 border-b">
-      <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-        <mat-icon class="mr-2 text-blue-600">campaign</mat-icon>
+<div class="h-full flex flex-col bg-gray-50">
+  <mat-card class="flex-1 flex flex-col overflow-hidden shadow-none border-0">
+    <!-- Minimal Header -->
+    <div class="px-6 py-5 border-b border-gray-200 bg-white">
+      <h2 class="text-xl font-semibold text-gray-900 flex items-center mb-1">
+        <mat-icon class="mr-2 text-blue-600" style="font-size: 28px; width: 28px; height: 28px;">campaign</mat-icon>
         Marketing
       </h2>
-      <p class="text-sm text-gray-600 mt-1">
+      <p class="text-sm text-gray-500 mt-0.5">
         Manage your marketing campaigns and strategies
       </p>
     </div>
 
-    <div class="flex-1 overflow-auto">
-      <mat-tab-group
-        [(selectedIndex)]="selectedTabIndex"
-        (selectedIndexChange)="onTabChange($event)"
-        class="h-full"
-      >
-        <!-- Overview Tab -->
-        <mat-tab label="Overview">
-          <div class="p-6">
-            <div class="max-w-4xl mx-auto">
-              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <mat-icon class="text-6xl text-gray-400 mb-4">bar_chart</mat-icon>
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
-                <p class="text-gray-600">
-                  Marketing overview and statistics will be available here.
-                </p>
+    <div class="flex-1 overflow-auto bg-gray-50">
+      <!-- Minimal Navigation Row -->
+      <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center">
+        <button
+          mat-button
+          (click)="onChannelChange('overview')"
+          [class.text-blue-600]="selectedChannel === 'overview'"
+          [class.bg-blue-50]="selectedChannel === 'overview'"
+          [class.font-semibold]="selectedChannel === 'overview'"
+          class="flex items-center px-4 py-2 rounded-lg transition-all duration-200 hover:bg-gray-50"
+          style="min-width: auto;"
+        >
+          <mat-icon class="mr-2" style="font-size: 20px; width: 20px; height: 20px;">bar_chart</mat-icon>
+          <span class="text-sm">Overview</span>
+        </button>
+        
+        <mat-form-field appearance="outline" class="ml-auto" style="margin: 0; width: 192px;">
+          <mat-label class="text-sm text-gray-600">Social Media Channel</mat-label>
+          <mat-select [(ngModel)]="selectedChannel" (selectionChange)="onChannelChange(selectedChannel)" class="text-sm">
+            <mat-option value="meta" class="text-sm">Meta</mat-option>
+            <mat-option value="twitter" class="text-sm">Twitter</mat-option>
+            <mat-option value="tiktok" class="text-sm">TikTok</mat-option>
+            <mat-option value="youtube" class="text-sm">YouTube</mat-option>
+            <mat-option value="google" class="text-sm">Google</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Content Sections -->
+      <div class="flex-1 overflow-auto">
+        <!-- Overview Section -->
+        <div *ngIf="selectedChannel === 'overview'" class="p-8">
+          <div class="max-w-5xl mx-auto">
+            <!-- Overview Statistics Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Facebook Marketing Overview</h3>
+              </div>
+              
+              <div *ngIf="isLoadingOverview" class="flex justify-center items-center py-12">
+                <mat-spinner diameter="40"></mat-spinner>
+              </div>
+
+              <div *ngIf="!isLoadingOverview" class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                        Metric
+                      </th>
+                      <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700 border-b border-gray-200">
+                        Value
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">
+                        Total Facebook Spend
+                      </td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatCurrency(overviewStats.totalSpend) }}
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">
+                        Active Ads
+                      </td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatNumber(overviewStats.activeAds) }}
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">
+                        Total Ads
+                      </td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatNumber(overviewStats.totalAds) }}
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">
+                        Clicks
+                      </td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatNumber(overviewStats.clicks) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        </mat-tab>
+        </div>
 
-        <!-- Meta Tab -->
-        <mat-tab label="Meta">
-          <div class="p-6">
-            <div class="mb-4 flex space-x-2 border-b">
-              <button
-                (click)="selectedMetaSection = 'posts'"
-                [class.bg-blue-50]="selectedMetaSection === 'posts'"
-                [class.text-blue-600]="selectedMetaSection === 'posts'"
-                [class.border-b-2]="selectedMetaSection === 'posts'"
-                [class.border-blue-600]="selectedMetaSection === 'posts'"
-                class="px-4 py-2 font-medium text-gray-700 hover:text-blue-600 transition-colors"
-              >
-                Posts
-              </button>
-              <button
-                (click)="selectedMetaSection = 'ads'"
-                [class.bg-blue-50]="selectedMetaSection === 'ads'"
-                [class.text-blue-600]="selectedMetaSection === 'ads'"
-                [class.border-b-2]="selectedMetaSection === 'ads'"
-                [class.border-blue-600]="selectedMetaSection === 'ads'"
-                class="px-4 py-2 font-medium text-gray-700 hover:text-blue-600 transition-colors"
-              >
-                Ads
-              </button>
-            </div>
+        <!-- Meta Section -->
+        <div *ngIf="selectedChannel === 'meta'" class="p-8">
+          <div class="mb-6 flex space-x-1 border-b border-gray-200">
+            <button
+              (click)="onMetaSectionChange('posts')"
+              [class.text-blue-600]="selectedMetaSection === 'posts'"
+              [class.border-b-2]="selectedMetaSection === 'posts'"
+              [class.border-blue-600]="selectedMetaSection === 'posts'"
+              [class.font-semibold]="selectedMetaSection === 'posts'"
+              class="px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors border-b-2 border-transparent -mb-px"
+            >
+              Posts
+            </button>
+            <button
+              (click)="onMetaSectionChange('ads')"
+              [class.text-blue-600]="selectedMetaSection === 'ads'"
+              [class.border-b-2]="selectedMetaSection === 'ads'"
+              [class.border-blue-600]="selectedMetaSection === 'ads'"
+              [class.font-semibold]="selectedMetaSection === 'ads'"
+              class="px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors border-b-2 border-transparent -mb-px"
+            >
+              Ads
+            </button>
+          </div>
 
             <!-- Posts Section -->
             <div *ngIf="selectedMetaSection === 'posts'" class="max-w-6xl mx-auto">
@@ -368,282 +442,784 @@
 
             <!-- Ads Section -->
             <div *ngIf="selectedMetaSection === 'ads'" class="max-w-6xl mx-auto space-y-6">
+              <!-- Ads List Card -->
               <mat-card>
                 <div class="p-6">
-                  <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                    <mat-icon class="mr-2 text-blue-600">ads_click</mat-icon>
-                    Create Facebook Ad Campaign
-                  </h3>
-
-                  <form (ngSubmit)="createAd()" class="space-y-8">
-                    <!-- Campaign Section -->
-                    <div class="border-b pb-6">
-                      <h4 class="text-lg font-semibold text-gray-700 mb-4">Campaign Details</h4>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Campaign Name *</mat-label>
-                          <input matInput [(ngModel)]="adForm.campaign.name" name="campaignName" required />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Objective *</mat-label>
-                          <mat-select [(ngModel)]="adForm.campaign.objective" name="objective" required>
-                            <mat-option *ngFor="let obj of objectiveOptions" [value]="obj">
-                              {{ obj }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Status *</mat-label>
-                          <mat-select [(ngModel)]="adForm.campaign.status" name="campaignStatus" required>
-                            <mat-option value="PAUSED">Paused</mat-option>
-                            <mat-option value="ACTIVE">Active</mat-option>
-                          </mat-select>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Buying Type *</mat-label>
-                          <input matInput [(ngModel)]="adForm.campaign.buying_type" name="buyingType" value="AUCTION" readonly />
-                        </mat-form-field>
-                      </div>
-                    </div>
-
-                    <!-- Ad Set Section -->
-                    <div class="border-b pb-6">
-                      <h4 class="text-lg font-semibold text-gray-700 mb-4">Ad Set Details</h4>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Ad Set Name *</mat-label>
-                          <input matInput [(ngModel)]="adForm.adset.name" name="adsetName" required />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Daily Budget (in cents) *</mat-label>
-                          <input matInput type="number" [(ngModel)]="adForm.adset.daily_budget" name="dailyBudget" required min="1" />
-                          <mat-hint>e.g., 13000 = $130.00</mat-hint>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Billing Event *</mat-label>
-                          <input matInput [(ngModel)]="adForm.adset.billing_event" name="billingEvent" value="IMPRESSIONS" readonly />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Optimization Goal *</mat-label>
-                          <input matInput [(ngModel)]="adForm.adset.optimization_goal" name="optimizationGoal" value="OFFSITE_CONVERSIONS" readonly />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Bid Strategy *</mat-label>
-                          <input matInput [(ngModel)]="adForm.adset.bid_strategy" name="bidStrategy" value="LOWEST_COST_WITHOUT_CAP" readonly />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" class="w-full">
-                          <mat-label>Ad Set Status *</mat-label>
-                          <mat-select [(ngModel)]="adForm.adset.status" name="adsetStatus" required>
-                            <mat-option value="PAUSED">Paused</mat-option>
-                            <mat-option value="ACTIVE">Active</mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                      </div>
-
-                      <!-- Targeting -->
-                      <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <h5 class="text-md font-medium text-gray-700 mb-3">Targeting</h5>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Min Age</mat-label>
-                            <input matInput type="number" [(ngModel)]="adForm.adset.targeting.age_min" name="ageMin" min="13" max="65" />
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Max Age</mat-label>
-                            <input matInput type="number" [(ngModel)]="adForm.adset.targeting.age_max" name="ageMax" min="13" max="65" />
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Countries</mat-label>
-                            <mat-select [(ngModel)]="adForm.adset.targeting.geo_locations!.countries" name="countries" multiple>
-                              <mat-option *ngFor="let country of availableCountries" [value]="country">
-                                {{ country }}
-                              </mat-option>
-                            </mat-select>
-                            <mat-hint>Select target countries</mat-hint>
-                          </mat-form-field>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Ad Creatives Section -->
-                    <div>
-                      <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-lg font-semibold text-gray-700">Ad Creatives</h4>
-                        <button
-                          type="button"
-                          mat-raised-button
-                          color="accent"
-                          (click)="addAdCreative()"
-                        >
-                          <mat-icon>add</mat-icon>
-                          Add Creative
-                        </button>
-                      </div>
-
-                      <div *ngFor="let ad of adForm.ads; let i = index" class="mb-6 p-4 border rounded-lg">
-                        <div class="flex justify-between items-center mb-4">
-                          <h5 class="text-md font-medium text-gray-700">Ad Creative {{ i + 1 }}</h5>
-                          <button
-                            *ngIf="adForm.ads.length > 1"
-                            type="button"
-                            mat-icon-button
-                            color="warn"
-                            (click)="removeAdCreative(i)"
-                          >
-                            <mat-icon>delete</mat-icon>
-                          </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Ad Name *</mat-label>
-                            <input matInput [(ngModel)]="ad.name" [name]="'adName' + i" required />
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Ad Status *</mat-label>
-                            <mat-select [(ngModel)]="ad.status" [name]="'adStatus' + i" required>
-                              <mat-option value="PAUSED">Paused</mat-option>
-                              <mat-option value="ACTIVE">Active</mat-option>
-                            </mat-select>
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                            <mat-label>Link URL *</mat-label>
-                            <input matInput type="url" [(ngModel)]="ad.creative.link" [name]="'adLink' + i" required />
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                            <mat-label>Message *</mat-label>
-                            <textarea matInput rows="3" [(ngModel)]="ad.creative.message" [name]="'adMessage' + i" required></textarea>
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Headline *</mat-label>
-                            <input matInput [(ngModel)]="ad.creative.headline" [name]="'adHeadline' + i" required />
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Call to Action *</mat-label>
-                            <mat-select [(ngModel)]="ad.creative.call_to_action" [name]="'adCTA' + i" required>
-                              <mat-option *ngFor="let cta of callToActionOptions" [value]="cta">
-                                {{ cta }}
-                              </mat-option>
-                            </mat-select>
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                            <mat-label>Description *</mat-label>
-                            <textarea matInput rows="2" [(ngModel)]="ad.creative.description" [name]="'adDescription' + i" required></textarea>
-                          </mat-form-field>
-
-                          <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                            <mat-label>Image URL *</mat-label>
-                            <input matInput type="url" [(ngModel)]="ad.creative.image_url" [name]="'adImageUrl' + i" required />
-                            <mat-hint>Enter the full URL to the ad image</mat-hint>
-                          </mat-form-field>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                  <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                      <mat-icon class="mr-2 text-blue-600">ads_click</mat-icon>
+                      Facebook Ads
+                    </h3>
+                    <div class="flex items-center space-x-4">
+                      <mat-form-field appearance="outline" style="width: 130px; min-width: 110px; max-width: 180px;">
+                        <mat-label>Date Range</mat-label>
+                        <mat-select [(ngModel)]="selectedDatePreset" (selectionChange)="onDatePresetChange()">
+                          <mat-option *ngFor="let option of datePresetOptions" [value]="option.value">
+                            {{ option.label }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
                       <button
-                        type="button"
-                        mat-raised-button
-                        (click)="resetAdForm()"
-                        [disabled]="isLoadingAd"
-                      >
-                        Reset Form
-                      </button>
-                      <button
-                        type="submit"
                         mat-raised-button
                         color="primary"
-                        [disabled]="isLoadingAd"
+                        (click)="openCreateAdModal()"
+                        class="w-100"
                       >
-                        <mat-icon *ngIf="isLoadingAd">hourglass_empty</mat-icon>
-                        <mat-icon *ngIf="!isLoadingAd">campaign</mat-icon>
-                        {{ isLoadingAd ? 'Creating...' : 'Create Ad Campaign' }}
+                        <mat-icon>add</mat-icon>
+                        Create New Ad Campaign
                       </button>
                     </div>
-                  </form>
+                  </div>
+
+                  <!-- Loading State -->
+                  <div *ngIf="isLoadingAds" class="flex justify-center items-center py-12">
+                    <mat-spinner diameter="40"></mat-spinner>
+                  </div>
+
+                  <!-- Ads Table -->
+                  <div *ngIf="!isLoadingAds && adsList.length > 0" class="overflow-x-auto">
+                    <table mat-table [dataSource]="adsList" class="w-full">
+                      <!-- Name Column -->
+                      <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef>Ad Name</th>
+                        <td mat-cell *matCellDef="let ad">{{ ad.name }}</td>
+                      </ng-container>
+
+                      <!-- Status Column -->
+                      <ng-container matColumnDef="status">
+                        <th mat-header-cell *matHeaderCellDef>Status</th>
+                        <td mat-cell *matCellDef="let ad">
+                          <span [class]="ad.status === 'ACTIVE' ? 'text-green-600' : 'text-gray-600'">
+                            {{ ad.status }}
+                          </span>
+                        </td>
+                      </ng-container>
+
+                      <!-- Effective Status Column -->
+                      <ng-container matColumnDef="effective_status">
+                        <th mat-header-cell *matHeaderCellDef>Effective Status</th>
+                        <td mat-cell *matCellDef="let ad">
+                          <span 
+                            [class]="getEffectiveStatusClass(ad.effective_status)"
+                            [title]="ad.effective_status || 'Unknown'"
+                          >
+                            {{ ad.effective_status || 'N/A' }}
+                          </span>
+                        </td>
+                      </ng-container>
+
+                      <!-- Delivery Column -->
+                      <ng-container matColumnDef="delivery">
+                        <th mat-header-cell *matHeaderCellDef>Delivery</th>
+                        <td mat-cell *matCellDef="let ad">
+                          <span 
+                            [class]="getDeliveryStatusClass(ad.delivery_info?.status)"
+                            [title]="ad.delivery_info?.status || 'Unknown'"
+                          >
+                            {{ ad.delivery_info?.status || 'N/A' }}
+                          </span>
+                        </td>
+                      </ng-container>
+
+                      <!-- Spend Column -->
+                      <ng-container matColumnDef="spend">
+                        <th mat-header-cell *matHeaderCellDef>Spend</th>
+                        <td mat-cell *matCellDef="let ad">
+                          {{ ad.insights ? formatCurrencyFromCents(ad.insights.spend) : 'KES 0.00' }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Impressions Column -->
+                      <ng-container matColumnDef="impressions">
+                        <th mat-header-cell *matHeaderCellDef>Impressions</th>
+                        <td mat-cell *matCellDef="let ad">
+                          {{ ad.insights ? formatNumber(ad.insights.impressions) : '0' }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Clicks Column -->
+                      <ng-container matColumnDef="clicks">
+                        <th mat-header-cell *matHeaderCellDef>Clicks</th>
+                        <td mat-cell *matCellDef="let ad">
+                          {{ ad.insights ? formatNumber(ad.insights.clicks) : '0' }}
+                        </td>
+                      </ng-container>
+
+                      <!-- CTR Column -->
+                      <ng-container matColumnDef="ctr">
+                        <th mat-header-cell *matHeaderCellDef>CTR</th>
+                        <td mat-cell *matCellDef="let ad">
+                          {{ ad.insights ? (ad.insights.ctr | number:'1.2-2') + '%' : '0.00%' }}
+                        </td>
+                      </ng-container>
+
+                      <!-- CPC Column -->
+                      <ng-container matColumnDef="cpc">
+                        <th mat-header-cell *matHeaderCellDef>CPC</th>
+                        <td mat-cell *matCellDef="let ad">
+                          {{ ad.insights ? formatCurrencyFromCents(ad.insights.cpc) : 'KES 0.00' }}
+                        </td>
+                      </ng-container>
+
+                      <!-- CPM Column -->
+                      <ng-container matColumnDef="cpm">
+                        <th mat-header-cell *matHeaderCellDef>CPM</th>
+                        <td mat-cell *matCellDef="let ad">
+                          {{ ad.insights ? formatCurrencyFromCents(ad.insights.cpm) : 'KES 0.00' }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Actions Column -->
+                      <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef>Actions</th>
+                        <td mat-cell *matCellDef="let ad">
+                          <div class="flex space-x-2">
+                            <button
+                              mat-icon-button
+                              color="accent"
+                              (click)="openViewAdModal(ad)"
+                              [disabled]="isUpdatingAd"
+                              matTooltip="View Ad Details"
+                            >
+                              <mat-icon>visibility</mat-icon>
+                            </button>
+                            <button
+                              mat-icon-button
+                              color="primary"
+                              (click)="openUpdateAdModal(ad)"
+                              [disabled]="isUpdatingAd"
+                              matTooltip="Update Ad"
+                            >
+                              <mat-icon>edit</mat-icon>
+                            </button>
+                            <button
+                              mat-icon-button
+                              [color]="ad.status === 'ACTIVE' ? 'warn' : 'primary'"
+                              (click)="toggleAdStatus(ad)"
+                              [disabled]="isUpdatingAd"
+                              [matTooltip]="ad.status === 'ACTIVE' ? 'Pause Ad' : 'Activate Ad'"
+                            >
+                              <mat-icon>{{ ad.status === 'ACTIVE' ? 'pause' : 'play_arrow' }}</mat-icon>
+                            </button>
+                          </div>
+                        </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+                    </table>
+
+                    <!-- Pagination -->
+                    <div *ngIf="adsPaging" class="flex justify-between items-center mt-4">
+                      <button
+                        mat-button
+                        [disabled]="!adsPaging.cursors?.before"
+                        (click)="loadAds(10, undefined, adsPaging.cursors?.before)"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        mat-button
+                        [disabled]="!adsPaging.cursors?.after"
+                        (click)="loadAds(10, adsPaging.cursors?.after)"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div *ngIf="!isLoadingAds && adsList.length === 0" class="text-center py-12">
+                    <mat-icon class="text-6xl text-gray-400 mb-4">ads_click</mat-icon>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">No Ads Found</h4>
+                    <p class="text-gray-600 mb-4">Create your first ad campaign to get started.</p>
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="openCreateAdModal()"
+                    >
+                      <mat-icon>add</mat-icon>
+                      Create Ad Campaign
+                    </button>
+                  </div>
                 </div>
               </mat-card>
             </div>
           </div>
-        </mat-tab>
 
-        <!-- Twitter Tab -->
-        <mat-tab label="Twitter">
-          <div class="p-6">
-            <div class="max-w-4xl mx-auto">
-              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <mat-icon class="text-6xl text-gray-400 mb-4">chat</mat-icon>
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
-                <p class="text-gray-600">
-                  Twitter marketing features will be available here.
-                </p>
-              </div>
+        <!-- Twitter Section -->
+        <div *ngIf="selectedChannel === 'twitter'" class="p-8">
+          <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+              <mat-icon class="text-6xl text-gray-300 mb-4" style="font-size: 64px; width: 64px; height: 64px;">chat</mat-icon>
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Coming Soon</h3>
+              <p class="text-gray-500 text-sm">
+                Twitter marketing features will be available here.
+              </p>
             </div>
           </div>
-        </mat-tab>
+        </div>
 
-        <!-- TikTok Tab -->
-        <mat-tab label="TikTok">
-          <div class="p-6">
-            <div class="max-w-4xl mx-auto">
-              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <mat-icon class="text-6xl text-gray-400 mb-4">video_library</mat-icon>
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
-                <p class="text-gray-600">
-                  TikTok marketing features will be available here.
-                </p>
-              </div>
+        <!-- TikTok Section -->
+        <div *ngIf="selectedChannel === 'tiktok'" class="p-8">
+          <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+              <mat-icon class="text-6xl text-gray-300 mb-4" style="font-size: 64px; width: 64px; height: 64px;">video_library</mat-icon>
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Coming Soon</h3>
+              <p class="text-gray-500 text-sm">
+                TikTok marketing features will be available here.
+              </p>
             </div>
           </div>
-        </mat-tab>
+        </div>
 
-        <!-- YouTube Tab -->
-        <mat-tab label="YouTube">
-          <div class="p-6">
-            <div class="max-w-4xl mx-auto">
-              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <mat-icon class="text-6xl text-gray-400 mb-4">play_circle</mat-icon>
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
-                <p class="text-gray-600">
-                  YouTube marketing features will be available here.
-                </p>
-              </div>
+        <!-- YouTube Section -->
+        <div *ngIf="selectedChannel === 'youtube'" class="p-8">
+          <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+              <mat-icon class="text-6xl text-gray-300 mb-4" style="font-size: 64px; width: 64px; height: 64px;">play_circle</mat-icon>
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Coming Soon</h3>
+              <p class="text-gray-500 text-sm">
+                YouTube marketing features will be available here.
+              </p>
             </div>
           </div>
-        </mat-tab>
+        </div>
 
-        <!-- Google Tab -->
-        <mat-tab label="Google">
-          <div class="p-6">
-            <div class="max-w-4xl mx-auto">
-              <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <mat-icon class="text-6xl text-gray-400 mb-4">search</mat-icon>
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Coming Soon</h3>
-                <p class="text-gray-600">
-                  Google marketing features will be available here.
-                </p>
-              </div>
+        <!-- Google Section -->
+        <div *ngIf="selectedChannel === 'google'" class="p-8">
+          <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+              <mat-icon class="text-6xl text-gray-300 mb-4" style="font-size: 64px; width: 64px; height: 64px;">search</mat-icon>
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">Coming Soon</h3>
+              <p class="text-gray-500 text-sm">
+                Google marketing features will be available here.
+              </p>
             </div>
           </div>
-        </mat-tab>
-      </mat-tab-group>
+        </div>
+      </div>
     </div>
   </mat-card>
+</div>
+
+<!-- Create Ad Modal -->
+<div *ngIf="isCreateAdModalOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeCreateAdModal()">
+  <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+    <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
+      <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">campaign</mat-icon>
+        Create Facebook Ad Campaign
+      </h2>
+      <button mat-icon-button (click)="closeCreateAdModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="p-6">
+      <form #adFormRef="ngForm" (ngSubmit)="createAd()" class="space-y-8">
+        <!-- Campaign Section -->
+        <div class="border-b pb-6">
+          <h4 class="text-lg font-semibold text-gray-700 mb-4">Campaign Details</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Campaign Name *</mat-label>
+              <input matInput [(ngModel)]="adForm.campaign.name" name="campaignName" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Objective *</mat-label>
+              <mat-select [(ngModel)]="adForm.campaign.objective" name="objective" required (selectionChange)="onObjectiveChange()">
+                <mat-option *ngFor="let obj of objectiveOptions" [value]="obj">
+                  {{ obj }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Status *</mat-label>
+              <mat-select [(ngModel)]="adForm.campaign.status" name="campaignStatus" required>
+                <mat-option value="PAUSED">Paused</mat-option>
+                <mat-option value="ACTIVE">Active</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Ad Set Section -->
+        <div class="border-b pb-6">
+          <h4 class="text-lg font-semibold text-gray-700 mb-4">Ad Set Details</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ad Set Name *</mat-label>
+              <input matInput [(ngModel)]="adForm.adset.name" name="adsetName" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Daily Budget (in shillings) *</mat-label>
+              <input matInput type="number" [(ngModel)]="createAdDailyBudgetShillings" name="dailyBudget" required min="200" />
+              <mat-hint>Minimum: 200 shillings (e.g., 200 = 20,000 cents)</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Optimization Goal *</mat-label>
+              <mat-select [(ngModel)]="adForm.adset.optimization_goal" name="optimizationGoal" required>
+                <mat-option *ngFor="let goal of availableOptimizationGoals" [value]="goal">
+                  {{ goal }}
+                </mat-option>
+              </mat-select>
+              <mat-hint>Based on selected objective</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Ad Set Status *</mat-label>
+              <mat-select [(ngModel)]="adForm.adset.status" name="adsetStatus" required>
+                <mat-option value="PAUSED">Paused</mat-option>
+                <mat-option value="ACTIVE">Active</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Targeting -->
+          <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+            <h5 class="text-md font-medium text-gray-700 mb-3">Targeting</h5>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Min Age</mat-label>
+                <input matInput type="number" [(ngModel)]="adForm.adset.targeting.age_min" name="ageMin" min="13" max="65" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Max Age</mat-label>
+                <input matInput type="number" [(ngModel)]="adForm.adset.targeting.age_max" name="ageMax" min="13" max="65" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Countries *</mat-label>
+                <mat-select [(ngModel)]="adForm.adset.targeting.geo_locations!.countries" name="countries" multiple required>
+                  <mat-option *ngFor="let country of availableCountries" [value]="country">
+                    {{ country }}
+                  </mat-option>
+                </mat-select>
+                <mat-hint>Select at least one target country</mat-hint>
+                <mat-error *ngIf="adFormRef.submitted && (!adForm.adset.targeting.geo_locations?.countries || adForm.adset.targeting.geo_locations?.countries?.length === 0)">
+                  At least one country must be selected
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ad Creatives Section -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h4 class="text-lg font-semibold text-gray-700">Ad Creatives</h4>
+            <button
+              type="button"
+              mat-raised-button
+              color="accent"
+              (click)="addAdCreative()"
+            >
+              <mat-icon>add</mat-icon>
+              Add Creative
+            </button>
+          </div>
+
+          <div *ngFor="let ad of adForm.ads; let i = index" class="mb-6 p-4 border rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h5 class="text-md font-medium text-gray-700">Ad Creative {{ i + 1 }}</h5>
+              <button
+                *ngIf="adForm.ads.length > 1"
+                type="button"
+                mat-icon-button
+                color="warn"
+                (click)="removeAdCreative(i)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ad Name *</mat-label>
+                <input matInput [(ngModel)]="ad.name" [name]="'adName' + i" required />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ad Status *</mat-label>
+                <mat-select [(ngModel)]="ad.status" [name]="'adStatus' + i" required>
+                  <mat-option value="PAUSED">Paused</mat-option>
+                  <mat-option value="ACTIVE">Active</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Link URL *</mat-label>
+                <input matInput type="url" [(ngModel)]="ad.creative.link" [name]="'adLink' + i" required />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Message *</mat-label>
+                <textarea matInput rows="3" [(ngModel)]="ad.creative.message" [name]="'adMessage' + i" required></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Headline *</mat-label>
+                <input matInput [(ngModel)]="ad.creative.headline" [name]="'adHeadline' + i" required />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Call to Action *</mat-label>
+                <mat-select [(ngModel)]="ad.creative.call_to_action" [name]="'adCTA' + i" required>
+                  <mat-option *ngFor="let cta of callToActionOptions" [value]="cta">
+                    {{ cta }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Description *</mat-label>
+                <textarea matInput rows="2" [(ngModel)]="ad.creative.description" [name]="'adDescription' + i" required></textarea>
+              </mat-form-field>
+
+              <div class="w-full md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ad Image *</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onCreateAdImageSelected($event, i)"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <p class="mt-1 text-xs text-gray-500">Select an image to be uploaded and used in the ad creative</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+          <button
+            type="button"
+            mat-raised-button
+            (click)="closeCreateAdModal()"
+            [disabled]="isLoadingAd"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            mat-raised-button
+            (click)="resetAdForm()"
+            [disabled]="isLoadingAd"
+          >
+            Reset Form
+          </button>
+          <button
+            type="submit"
+            mat-raised-button
+            color="primary"
+            [disabled]="isLoadingAd || !isAdFormValid()"
+          >
+            <mat-icon *ngIf="isLoadingAd">hourglass_empty</mat-icon>
+            <mat-icon *ngIf="!isLoadingAd">campaign</mat-icon>
+            {{ isLoadingAd ? 'Creating...' : 'Create Ad Campaign' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Update Ad Modal -->
+<div *ngIf="isUpdateAdModalOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeUpdateAdModal()">
+  <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">edit</mat-icon>
+        Update Ad
+      </h2>
+      <button mat-icon-button (click)="closeUpdateAdModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 min-h-0">
+      <!-- Loading Spinner for Creative -->
+      <div *ngIf="isLoadingCreative" class="flex justify-center items-center py-8">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span class="ml-4 text-gray-600">Loading creative details...</span>
+      </div>
+
+      <!-- Form Content -->
+      <div *ngIf="!isLoadingCreative">
+      <form (ngSubmit)="updateAd()" class="space-y-6">
+        <!-- Ad Name -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Ad Name *</mat-label>
+          <input matInput [(ngModel)]="updateAdForm.name" name="updateAdName" required />
+        </mat-form-field>
+
+        <!-- Ad Status -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Ad Status *</mat-label>
+          <mat-select [(ngModel)]="updateAdForm.status" name="updateAdStatus" required>
+            <mat-option value="PAUSED">Paused</mat-option>
+            <mat-option value="ACTIVE">Active</mat-option>
+            <mat-option value="ARCHIVED">Archived</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Creative Fields -->
+        <div class="border-t pt-6 mt-6">
+          <h4 class="text-lg font-semibold text-gray-700 mb-4">Creative Details</h4>
+          
+          <!-- Ad Image Display/Upload -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Ad Image</label>
+            <div *ngIf="creativeImageUrl" class="mb-3">
+              <div class="border rounded-lg p-2 bg-gray-50">
+                <img 
+                  [src]="creativeImageUrl" 
+                  alt="Ad Creative Image" 
+                  class="max-w-full h-auto rounded-md object-contain max-h-64 mx-auto"
+                  onerror="this.style.display='none'"
+                />
+              </div>
+            </div>
+            <input 
+              type="file" 
+              accept="image/*" 
+              (change)="onImageSelected($event)"
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <p class="mt-1 text-xs text-gray-500">Select a new image to replace the current one</p>
+          </div>
+          
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Headline</mat-label>
+            <input matInput [(ngModel)]="updateAdForm.headline" name="updateHeadline" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Link URL</mat-label>
+            <input matInput type="url" [(ngModel)]="updateAdForm.link" name="updateLink" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Message</mat-label>
+            <textarea matInput rows="3" [(ngModel)]="updateAdForm.message" name="updateMessage"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Description</mat-label>
+            <textarea matInput rows="2" [(ngModel)]="updateAdForm.description" name="updateDescription"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Call to Action</mat-label>
+            <mat-select [(ngModel)]="updateAdForm.call_to_action" name="updateCallToAction">
+              <mat-option value="">None</mat-option>
+              <mat-option value="SHOP_NOW">Shop Now</mat-option>
+              <mat-option value="LEARN_MORE">Learn More</mat-option>
+              <mat-option value="SIGN_UP">Sign Up</mat-option>
+              <mat-option value="DOWNLOAD">Download</mat-option>
+              <mat-option value="BOOK_TRAVEL">Book Travel</mat-option>
+              <mat-option value="CONTACT_US">Contact Us</mat-option>
+              <mat-option value="GET_QUOTE">Get Quote</mat-option>
+              <mat-option value="APPLY_NOW">Apply Now</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Adset Budget -->
+        <div class="border-t pt-6 mt-6">
+          <h4 class="text-lg font-semibold text-gray-700 mb-4">Ad Set Budget</h4>
+          
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Daily Budget (in shillings)</mat-label>
+            <input matInput type="number" [(ngModel)]="updateAdDailyBudgetShillings" name="updateDailyBudget" min="200" />
+            <mat-hint>Minimum: 200 shillings (e.g., 200 = 20,000 cents)</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+          <button
+            type="button"
+            mat-raised-button
+            (click)="closeUpdateAdModal()"
+            [disabled]="isUpdatingAd"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            mat-raised-button
+            color="primary"
+            [disabled]="isUpdatingAd || !isUpdateAdFormValid()"
+          >
+            <mat-icon *ngIf="isUpdatingAd">hourglass_empty</mat-icon>
+            <mat-icon *ngIf="!isUpdatingAd">save</mat-icon>
+            {{ isUpdatingAd ? 'Updating...' : 'Update Ad' }}
+          </button>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Ad Modal -->
+<div *ngIf="isViewAdModalOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeViewAdModal()">
+  <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">visibility</mat-icon>
+        View Ad
+      </h2>
+      <button mat-icon-button (click)="closeViewAdModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 min-h-0">
+      <!-- Loading Spinner for Creative -->
+      <div *ngIf="isLoadingViewCreative" class="flex justify-center items-center py-8">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span class="ml-4 text-gray-600">Loading ad details...</span>
+      </div>
+
+      <div *ngIf="!isLoadingViewCreative && selectedAdForView" class="space-y-6">
+        <!-- Basic Ad Info -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Ad Information</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div class="text-sm font-medium text-gray-600">Ad Name</div>
+              <div class="text-gray-900">{{ viewAdForm.name }}</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-gray-600">Status</div>
+              <div [class]="viewAdForm.status === 'ACTIVE' ? 'text-green-600 font-semibold' : 'text-gray-800'">
+                {{ viewAdForm.status }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="border-t pt-6">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Performance Metrics</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="text-xs font-medium text-gray-500 uppercase">Spend</div>
+              <div class="text-lg font-semibold text-gray-900">
+                {{ selectedAdForView.insights ? formatCurrency(selectedAdForView.insights.spend) : '$0.00' }}
+              </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="text-xs font-medium text-gray-500 uppercase">Impressions</div>
+              <div class="text-lg font-semibold text-gray-900">
+                {{ selectedAdForView.insights ? formatNumber(selectedAdForView.insights.impressions) : '0' }}
+              </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="text-xs font-medium text-gray-500 uppercase">Clicks</div>
+              <div class="text-lg font-semibold text-gray-900">
+                {{ selectedAdForView.insights ? formatNumber(selectedAdForView.insights.clicks) : '0' }}
+              </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="text-xs font-medium text-gray-500 uppercase">CTR</div>
+              <div class="text-lg font-semibold text-gray-900">
+                {{ selectedAdForView.insights ? (selectedAdForView.insights.ctr | number:'1.2-2') + '%' : '0.00%' }}
+              </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="text-xs font-medium text-gray-500 uppercase">CPC</div>
+              <div class="text-lg font-semibold text-gray-900">
+                {{ selectedAdForView.insights ? formatCurrencyFromCents(selectedAdForView.insights.cpc) : 'KES 0.00' }}
+              </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="text-xs font-medium text-gray-500 uppercase">CPM</div>
+              <div class="text-lg font-semibold text-gray-900">
+                {{ selectedAdForView.insights ? formatCurrencyFromCents(selectedAdForView.insights.cpm) : 'KES 0.00' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creative Details -->
+        <div class="border-t pt-6">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Creative Details</h3>
+
+          <div class="mb-4">
+            <div class="text-sm font-medium text-gray-600 mb-2">Ad Image</div>
+            <div *ngIf="viewCreativeImageUrl" class="border rounded-lg p-2 bg-gray-50">
+              <img
+                [src]="viewCreativeImageUrl"
+                alt="Ad Creative Image"
+                class="max-w-full h-auto rounded-md object-contain max-h-64 mx-auto"
+                onerror="this.style.display='none'"
+              />
+            </div>
+            <div *ngIf="!viewCreativeImageUrl" class="text-sm text-gray-500">
+              No image available.
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <div class="text-sm font-medium text-gray-600">Headline</div>
+              <div class="text-gray-900 break-words">{{ viewAdForm.headline || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-gray-600">Link URL</div>
+              <div class="text-blue-700 break-words" *ngIf="viewAdForm.link; else noLink">
+                {{ viewAdForm.link }}
+              </div>
+              <ng-template #noLink>
+                <div class="text-gray-500">—</div>
+              </ng-template>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-gray-600">Message</div>
+              <div class="text-gray-900 whitespace-pre-line break-words">{{ viewAdForm.message || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-gray-600">Description</div>
+              <div class="text-gray-900 whitespace-pre-line break-words">{{ viewAdForm.description || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-gray-600">Call to Action</div>
+              <div class="text-gray-900">{{ viewAdForm.call_to_action || 'None' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ad Set Budget -->
+        <div class="border-t pt-6">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Ad Set Budget</h3>
+          <div>
+            <div class="text-sm font-medium text-gray-600">Daily Budget</div>
+            <div class="text-gray-900">
+              {{ viewAdForm.daily_budget !== null && viewAdForm.daily_budget !== undefined ? (viewAdForm.daily_budget / 100).toFixed(0) + ' shillings (' + viewAdForm.daily_budget + ' cents)' : '—' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Close Button -->
+        <div class="flex justify-end pt-4 border-t">
+          <button
+            type="button"
+            mat-raised-button
+            (click)="closeViewAdModal()"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
