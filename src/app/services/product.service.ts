@@ -156,6 +156,17 @@ export class ProductService {
     );
   }
 
+  generateLandingPage(data: {
+    pid: string;
+    instructions: string;
+    landingPageName?: string;
+  }): Observable<ProductAPIResponse<any>> {
+    return this.httpClient.post<ProductAPIResponse<any>>(
+      '/product/generate-landing-page',
+      data
+    );
+  }
+
   deleteProductImage(productId: string, imageId: string) {
     return this.httpClient.delete<any>(
       `/product/${productId}/images/${imageId}`

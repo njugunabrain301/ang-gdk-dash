@@ -11,7 +11,7 @@
           type="file"
           class="hidden"
           (change)="onImageSelected($event)"
-          accept="image/*"
+          accept="image/jpeg,image/jpg,image/png,image/gif"
         />
         <div *ngIf="!prod.img" class="text-center p-4">
           <mat-icon class="w-24 h-24 text-gray-400"

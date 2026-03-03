@@ -18,6 +18,7 @@ export interface ScheduleData {
   metaUserAccessToken?: string | null;
   facebookAdAccountId?: string | null;
   facebookPixelId?: string | null;
+   merchantCenterId?: string | null;
 }
 
 export interface ScheduleUpdateRequest {
@@ -31,6 +32,7 @@ export interface ScheduleUpdateRequest {
   metaUserAccessToken?: string | null;
   facebookAdAccountId?: string | null;
   facebookPixelId?: string | null;
+  merchantCenterId?: string | null;
 }
 
 @Injectable({

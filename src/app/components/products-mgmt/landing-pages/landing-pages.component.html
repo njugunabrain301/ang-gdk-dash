@@ -412,6 +412,7 @@
         [disabled]="isAddingArticle || !selectedArticleType"
         class="mt-4"
       >
+        <mat-spinner *ngIf="isAddingArticle" diameter="20" class="inline-block mr-2"></mat-spinner>
         {{ isAddingArticle ? "Adding..." : "Add Article" }}
       </button>
 
@@ -425,15 +426,26 @@
             <mat-label>New Landing Page Name</mat-label>
             <input matInput [(ngModel)]="newLandingPageName" maxlength="15" />
           </mat-form-field>
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="addLandingPage()"
-            [disabled]="!newLandingPageName"
-            class="w-full sm:w-auto"
-          >
-            Add
-          </button>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="addLandingPage()"
+              [disabled]="!newLandingPageName"
+              class="flex-1 sm:flex-initial"
+            >
+              Add
+            </button>
+            <button
+              mat-icon-button
+              color="accent"
+              (click)="openGenerateLpModal()"
+              [disabled]="!productId"
+              [matTooltip]="'Generate landing page with AI'"
+            >
+              <mat-icon>auto_awesome</mat-icon>
+            </button>
+          </div>
         </div>
 
         <!-- Select Landing Page -->
@@ -466,6 +478,19 @@
             Mini Header
           </mat-slide-toggle>
 
+          <a
+            *ngIf="viewLandingPageUrl"
+            [href]="viewLandingPageUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            mat-stroked-button
+            color="primary"
+            matTooltip="Open this landing page on your store"
+          >
+            <mat-icon>open_in_new</mat-icon>
+            View
+          </a>
+
           <mat-slide-toggle
             [(ngModel)]="currentLandingPageSettings.default"
             (change)="onDefaultToggle()"
@@ -489,6 +514,59 @@
         >
         </app-segment>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Landing Page (AI) Modal -->
+<div
+  *ngIf="isGenerateLpModalOpen"
+  class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+  role="dialog"
+  aria-modal="true"
+  (click)="closeGenerateLpModal()"
+>
+  <div
+    class="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+    (click)="$event.stopPropagation()"
+  >
+    <h6 class="font-bold mb-4 flex items-center gap-2">
+      <mat-icon class="text-accent">auto_awesome</mat-icon>
+      Generate Landing Page
+    </h6>
+    <p class="text-sm text-gray-600 mb-4">
+      Describe the landing page you want. The AI will add articles (title, list, link, etc.) based on your instructions.
+    </p>
+    <mat-form-field class="w-full mb-3">
+      <mat-label>Landing page name</mat-label>
+      <input matInput [(ngModel)]="generateLpName" placeholder="e.g. summer-offer" maxlength="30" />
+    </mat-form-field>
+    <mat-form-field class="w-full mb-4">
+      <mat-label>Instructions</mat-label>
+      <textarea
+        matInput
+        [(ngModel)]="generateLpInstructions"
+        rows="4"
+        placeholder="e.g. Add a hero title, a short article, a feature list, and a shop-now link"
+      ></textarea>
+    </mat-form-field>
+    <div class="flex justify-end gap-2">
+      <button
+        mat-button
+        (click)="closeGenerateLpModal()"
+        [disabled]="isGenerateLpLoading"
+      >
+        Cancel
+      </button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="submitGenerateLp()"
+        [disabled]="isGenerateLpLoading || !generateLpInstructions.trim()"
+      >
+        <mat-spinner *ngIf="isGenerateLpLoading" diameter="20" class="inline-block mr-2"></mat-spinner>
+        {{ isGenerateLpLoading ? 'Generating...' : 'Generate' }}
+      </button>
     </div>
   </div>
 </div>

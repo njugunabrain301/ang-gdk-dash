@@ -42,6 +42,7 @@ export class AdvancedComponent implements OnInit {
   metaUserAccessToken: string = '';
   facebookAdAccountId: string = '';
   facebookPixelId: string = '';
+  merchantCenterId: string = '';
 
   // Original state for comparison
   private originalCredentials: {
@@ -51,6 +52,7 @@ export class AdvancedComponent implements OnInit {
     metaUserAccessToken: string;
     facebookAdAccountId: string;
     facebookPixelId: string;
+    merchantCenterId: string;
   } | null = null;
 
   isLoading = false;
@@ -78,6 +80,7 @@ export class AdvancedComponent implements OnInit {
           this.metaUserAccessToken = res.data.metaUserAccessToken || '';
           this.facebookAdAccountId = res.data.facebookAdAccountId || '';
           this.facebookPixelId = res.data.facebookPixelId || '';
+          this.merchantCenterId = res.data.merchantCenterId || '';
 
           // Store original state
           this.originalCredentials = {
@@ -87,6 +90,7 @@ export class AdvancedComponent implements OnInit {
             metaUserAccessToken: this.metaUserAccessToken,
             facebookAdAccountId: this.facebookAdAccountId,
             facebookPixelId: this.facebookPixelId,
+            merchantCenterId: this.merchantCenterId,
           };
 
           this.isInitializing = false;
@@ -127,6 +131,9 @@ export class AdvancedComponent implements OnInit {
     if (this.facebookPixelId) {
       updateData.facebookPixelId = this.facebookPixelId;
     }
+    if (this.merchantCenterId !== undefined) {
+      updateData.merchantCenterId = this.merchantCenterId || null;
+    }
 
     this.scheduleService.updateSchedule(updateData).subscribe({
       next: (res) => {
@@ -138,6 +145,7 @@ export class AdvancedComponent implements OnInit {
           this.metaUserAccessToken = res.data.metaUserAccessToken || '';
           this.facebookAdAccountId = res.data.facebookAdAccountId || '';
           this.facebookPixelId = res.data.facebookPixelId || '';
+          this.merchantCenterId = res.data.merchantCenterId || '';
 
           // Update original credentials to match saved values
           this.originalCredentials = {
@@ -147,6 +155,7 @@ export class AdvancedComponent implements OnInit {
             metaUserAccessToken: this.metaUserAccessToken,
             facebookAdAccountId: this.facebookAdAccountId,
             facebookPixelId: this.facebookPixelId,
+            merchantCenterId: this.merchantCenterId,
           };
 
           this.showSnackbar('Credentials updated successfully', 'success');
@@ -175,6 +184,7 @@ export class AdvancedComponent implements OnInit {
       this.metaUserAccessToken = this.originalCredentials.metaUserAccessToken;
       this.facebookAdAccountId = this.originalCredentials.facebookAdAccountId;
       this.facebookPixelId = this.originalCredentials.facebookPixelId;
+      this.merchantCenterId = this.originalCredentials.merchantCenterId;
     } else {
       this.facebookPageId = '';
       this.instagramAccountId = '';
@@ -182,6 +192,7 @@ export class AdvancedComponent implements OnInit {
       this.metaUserAccessToken = '';
       this.facebookAdAccountId = '';
       this.facebookPixelId = '';
+      this.merchantCenterId = '';
     }
   }
 
@@ -193,7 +204,8 @@ export class AdvancedComponent implements OnInit {
         this.facebookAccessToken ||
         this.metaUserAccessToken ||
         this.facebookAdAccountId ||
-        this.facebookPixelId
+        this.facebookPixelId ||
+        this.merchantCenterId
       );
     }
 
@@ -203,7 +215,8 @@ export class AdvancedComponent implements OnInit {
       this.facebookAccessToken !== this.originalCredentials.facebookAccessToken ||
       this.metaUserAccessToken !== this.originalCredentials.metaUserAccessToken ||
       this.facebookAdAccountId !== this.originalCredentials.facebookAdAccountId ||
-      this.facebookPixelId !== this.originalCredentials.facebookPixelId
+      this.facebookPixelId !== this.originalCredentials.facebookPixelId ||
+      this.merchantCenterId !== this.originalCredentials.merchantCenterId
     );
   }
 

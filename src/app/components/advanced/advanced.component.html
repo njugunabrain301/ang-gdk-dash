@@ -90,6 +90,18 @@
           <mat-icon matSuffix>track_changes</mat-icon>
           <mat-hint>Facebook Pixel ID for tracking conversions</mat-hint>
         </mat-form-field>
+
+        <!-- Merchant Center ID -->
+        <mat-form-field class="w-full" appearance="fill">
+          <mat-label>Merchant Center ID</mat-label>
+          <input
+            matInput
+            [(ngModel)]="merchantCenterId"
+            placeholder="e.g. 123456789"
+          />
+          <mat-icon matSuffix>store</mat-icon>
+          <mat-hint>Google Merchant Center ID used for Shopping ads product feed</mat-hint>
+        </mat-form-field>
       </div>
 
       <div class="p-6 border-t">

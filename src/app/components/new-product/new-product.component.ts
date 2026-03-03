@@ -125,8 +125,20 @@ export class NewProductComponent implements OnInit {
   onImageSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      const fileType = file.type.toLowerCase();
+      
+      if (!allowedTypes.includes(fileType)) {
+        this.showError('Please upload an image in JPG, JPEG, PNG, or GIF format only.');
+        // Reset the file input
+        event.target.value = '';
+        return;
+      }
+      
       if (file.size / (1024 * 1024) > 10) {
         this.showError('Please upload an image under 10MB.');
+        event.target.value = '';
         return;
       }
       this.prod.img = file;
@@ -170,6 +182,15 @@ export class NewProductComponent implements OnInit {
   private validateProduct(): boolean {
     if (!this.prod.img) {
       this.showError('Please provide an image');
+      return false;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const fileType = this.prod.img.type.toLowerCase();
+    
+    if (!allowedTypes.includes(fileType)) {
+      this.showError('Please upload an image in JPG, JPEG, PNG, or GIF format only.');
       return false;
     }
 
@@ -299,6 +320,15 @@ export class NewProductComponent implements OnInit {
     // Validate image
     if (!this.prod.img) {
       this.showError('Please provide an image');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const fileType = this.prod.img.type.toLowerCase();
+    
+    if (!allowedTypes.includes(fileType)) {
+      this.showError('Please upload an image in JPG, JPEG, PNG, or GIF format only.');
       return;
     }
 

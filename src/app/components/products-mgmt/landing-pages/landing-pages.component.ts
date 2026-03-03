@@ -5,8 +5,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SegmentComponent } from '../../segment/segment.component';
 import { LandingPage, Article } from '../../../interfaces/Product.interface';
 import { SafePipe } from '../../../pipes/safe.pipe';
@@ -26,8 +28,10 @@ import { EMPTY, of } from 'rxjs';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
     MatIconModule,
     MatSlideToggleModule,
+    MatTooltipModule,
     SegmentComponent,
     SafePipe,
   ],
@@ -36,11 +40,25 @@ import { EMPTY, of } from 'rxjs';
 })
 export class LandingPagesComponent {
   @Input() landingPages: LandingPage[] = [];
+  @Input() productId: string | null = null;
+  @Input() businessUrl = '';
   @Output() landingPagesChange = new EventEmitter<any[]>();
+
+  /** Public product page URL for the current landing page (opens in new tab). */
+  get viewLandingPageUrl(): string {
+    const base = 'https://' + (this.businessUrl || '').replace(/\/$/, '');
+    if (!base || !this.productId || !this.currentLandingPage) return '';
+
+    return `${base}/product/${this.productId}?lp=${encodeURIComponent(this.currentLandingPage)}`;
+  }
 
   currentLandingPage = '';
   newLandingPageName = '';
   selectedArticleType = '';
+  isGenerateLpModalOpen = false;
+  generateLpInstructions = '';
+  generateLpName = '';
+  isGenerateLpLoading = false;
   newArticle: Article = {
     type: '',
     order: 0,
@@ -141,14 +159,74 @@ export class LandingPagesComponent {
     this.emitChanges();
   }
 
+  openGenerateLpModal(): void {
+    this.generateLpInstructions = '';
+    this.generateLpName = '';
+    this.isGenerateLpModalOpen = true;
+  }
+
+  closeGenerateLpModal(): void {
+    if (this.isGenerateLpLoading) return;
+    this.isGenerateLpModalOpen = false;
+    this.generateLpInstructions = '';
+    this.generateLpName = '';
+  }
+
+  submitGenerateLp(): void {
+    const instructions = this.generateLpInstructions?.trim();
+    if (!this.productId || !instructions) {
+      this.snackBar.open('Instructions are required', 'Close', {
+        duration: 3000,
+        panelClass: ['error-snackbar'],
+      });
+      return;
+    }
+    this.isGenerateLpLoading = true;
+    const landingPageName = this.generateLpName?.trim() || 'default';
+    this.productService
+      .generateLandingPage({
+        pid: this.productId,
+        instructions,
+        landingPageName,
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: (res) => {
+          this.isGenerateLpLoading = false;
+          this.closeGenerateLpModal();
+          if (res?.success && res?.data) {
+            this.landingPages = [...this.landingPages, res.data];
+            this.currentLandingPage = res.data.name;
+            this.emitChanges();
+            this.snackBar.open('Landing page generated successfully', 'Close', {
+              duration: 3000,
+            });
+          } else {
+            this.snackBar.open('Failed to generate landing page', 'Close', {
+              duration: 3000,
+              panelClass: ['error-snackbar'],
+            });
+          }
+        },
+        error: (err) => {
+          this.isGenerateLpLoading = false;
+          this.snackBar.open(
+            err?.error?.message || 'Failed to generate landing page',
+            'Close',
+            { duration: 4000, panelClass: ['error-snackbar'] }
+          );
+        },
+      });
+  }
+
   addArticle() {
     if (!this.currentLandingPage || !this.selectedArticleType) return;
 
     // Validate required fields based on article type
     switch (this.selectedArticleType) {
       case 'article':
-        if (!this.newArticle.content.title || !this.newArticle.content.text) {
-          this.snackBar.open('Article requires both title and text', 'Close', {
+        if (!this.newArticle.content.title || !this.newArticle.content.content) {
+          this.snackBar.open('Article requires both title and content', 'Close', {
             duration: 3000,
             panelClass: ['error-snackbar'],
           });
@@ -212,7 +290,7 @@ export class LandingPagesComponent {
         break;
 
       case 'carousel':
-        if (
+      if (
           !this.newArticle.content.title ||
           !this.newArticle.content.values ||
           this.newArticle.content.values.length === 0
@@ -230,7 +308,7 @@ export class LandingPagesComponent {
         break;
 
       case 'video':
-        if (!this.newArticle.content.title || !this.newArticle.content.url) {
+        if (!this.newArticle.content.title || !this.newArticle.content.videoId) {
           this.snackBar.open(
             'Video requires both title and video URL',
             'Close',
@@ -293,6 +371,7 @@ export class LandingPagesComponent {
           }),
           catchError((error) => {
             console.error('Error uploading image:', error);
+            this.isAddingArticle = false;
             this.snackBar.open('Error uploading image', 'Close', {
               duration: 3000,
               panelClass: ['error-snackbar'],
@@ -303,25 +382,33 @@ export class LandingPagesComponent {
     }
 
     // Wait for the image upload (if any) before proceeding
-    imageUpload$.subscribe(() => {
-      this.isAddingArticle = true;
+    this.isAddingArticle = true;
+    imageUpload$.subscribe(
+      () => {
+        // Create new article with the selected type
+        const newArticle: Article = {
+          ...this.newArticle,
+          type: this.selectedArticleType,
+          order: currentPage.articles.length,
+        };
 
-      // Create new article with the selected type
-      const newArticle: Article = {
-        ...this.newArticle,
-        type: this.selectedArticleType,
-        order: currentPage.articles.length,
-      };
+        // Add the article to the current page
+        currentPage.articles = [...currentPage.articles, newArticle];
 
-      // Add the article to the current page
-      currentPage.articles = [...currentPage.articles, newArticle];
+        // Reset form
+        this.resetArticleForm();
 
-      // Reset form
-      this.resetArticleForm();
-
-      // Emit changes
-      this.emitChanges();
-    });
+        // Emit changes
+        this.emitChanges();
+        this.isAddingArticle = false;
+      },
+      () => {
+        this.isAddingArticle = false;
+      },
+      () => {
+        this.isAddingArticle = false;
+      }
+    );
   }
 
   handleArticleMove(

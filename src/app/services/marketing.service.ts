@@ -10,12 +10,12 @@ export interface PriorityItem {
 
 export interface PushPriorityRequest {
   productId: string;
-  channel: 'facebook' | 'instagram';
-  position?: 'front' | 'back';
+  channel: 'meta';
+  position: 'front' | 'back';
 }
 
 export interface ClearPriorityRequest {
-  channel: 'facebook' | 'instagram';
+  channel: 'meta';
 }
 
 @Injectable({
@@ -35,21 +35,12 @@ export class MarketingService {
   }
 
   /**
-   * Add a product to the front (index 0) of the posting priority queue
+   * Add a product to the posting priority queue
+   * @param data - Contains productId, channel ('meta' adds to both facebook and instagram), and position ('front' or 'back')
    */
-  pushPriorityToFront(data: PushPriorityRequest): Observable<ApiResponse<string[]>> {
-    return this.httpClient.post<ApiResponse<string[]>>(
-      '/marketing/priority-items/push-front',
-      data
-    );
-  }
-
-  /**
-   * Add a product to the back of the posting priority queue
-   */
-  pushPriorityToBack(data: PushPriorityRequest): Observable<ApiResponse<string[]>> {
-    return this.httpClient.post<ApiResponse<string[]>>(
-      '/marketing/priority-items/push-back',
+  pushPriority(data: PushPriorityRequest): Observable<ApiResponse<string[] | { facebook: string[]; instagram: string[] }>> {
+    return this.httpClient.post<ApiResponse<string[] | { facebook: string[]; instagram: string[] }>>(
+      '/marketing/priority-items/push',
       data
     );
   }
@@ -151,10 +142,24 @@ export class MarketingService {
   }
 
   /**
+   * Generate ad copy for a product (AI-powered primary text, headlines, descriptions).
+   * Optional landingPageName targets a specific landing page; otherwise uses the first.
+   */
+  generateAd(productId: string, landingPageName?: string): Observable<ApiResponse<GenerateAdData>> {
+    const body = landingPageName
+      ? { productId, landingPageName }
+      : { productId };
+    return this.httpClient.post<ApiResponse<GenerateAdData>>(
+      '/marketing/generateAd',
+      body
+    );
+  }
+
+  /**
    * Update an ad
    */
-  updateAd(adId: string, data: { 
-    name?: string; 
+  updateAd(adId: string, data: {
+    name?: string;
     status?: 'PAUSED' | 'ACTIVE' | 'ARCHIVED';
     headline?: string;
     link?: string;
@@ -170,6 +175,153 @@ export class MarketingService {
       data
     );
   }
+
+  // --- TikTok ---
+
+  getTiktokOAuthStartUrl(): Observable<ApiResponse<{ redirectUrl: string }>> {
+    return this.httpClient.get<ApiResponse<{ redirectUrl: string }>>('/tiktok/oauth/start-url');
+  }
+
+  getTiktokStatus(): Observable<ApiResponse<TiktokStatus>> {
+    return this.httpClient.get<ApiResponse<TiktokStatus>>('/tiktok/status');
+  }
+
+  getTiktokAdvertisers(): Observable<ApiResponse<TiktokAdvertiser[]>> {
+    return this.httpClient.get<ApiResponse<TiktokAdvertiser[]>>('/tiktok/advertisers');
+  }
+
+  getTiktokAds(params?: { advertiser_id?: string; page?: number; page_size?: number }): Observable<ApiResponse<TiktokAdsResponse>> {
+    const q = new URLSearchParams();
+    if (params?.advertiser_id) q.append('advertiser_id', params.advertiser_id);
+    if (params?.page) q.append('page', params.page.toString());
+    if (params?.page_size) q.append('page_size', params.page_size.toString());
+    const query = q.toString();
+    return this.httpClient.get<ApiResponse<TiktokAdsResponse>>(`/tiktok/ads${query ? `?${query}` : ''}`);
+  }
+
+  updateTiktokAdStatus(adId: string, status: 'ENABLE' | 'DISABLE', advertiserId?: string): Observable<ApiResponse<any>> {
+    return this.httpClient.put<ApiResponse<any>>(`/tiktok/ads/${adId}/status`, { status, advertiser_id: advertiserId });
+  }
+
+  getTiktokCreatorInfo(): Observable<ApiResponse<TiktokCreatorInfo>> {
+    return this.httpClient.get<ApiResponse<TiktokCreatorInfo>>('/tiktok/creator-info');
+  }
+
+  postTiktokPhoto(body: TiktokPostPhotoRequest): Observable<ApiResponse<{ publish_id: string }>> {
+    return this.httpClient.post<ApiResponse<{ publish_id: string }>>('/tiktok/post/photo', body);
+  }
+
+  postTiktokVideo(body: TiktokPostVideoRequest): Observable<ApiResponse<{ publish_id: string }>> {
+    return this.httpClient.post<ApiResponse<{ publish_id: string }>>('/tiktok/post/video', body);
+  }
+
+  getTiktokPostStatus(publishId: string): Observable<ApiResponse<TiktokPublishStatus>> {
+    return this.httpClient.get<ApiResponse<TiktokPublishStatus>>(`/tiktok/post/status/${publishId}`);
+  }
+
+  createTiktokCampaign(body: TiktokCampaignCreateRequest): Observable<ApiResponse<any>> {
+    return this.httpClient.post<ApiResponse<any>>('/tiktok/campaigns', body);
+  }
+
+  createTiktokAdgroup(body: TiktokAdgroupCreateRequest): Observable<ApiResponse<any>> {
+    return this.httpClient.post<ApiResponse<any>>('/tiktok/adgroups', body);
+  }
+
+  createTiktokAd(body: TiktokAdCreateRequest): Observable<ApiResponse<any>> {
+    return this.httpClient.post<ApiResponse<any>>('/tiktok/ads', body);
+  }
+}
+
+export interface TiktokStatus {
+  connected: boolean;
+  advertiserId: string | null;
+  openId: string | null;
+  displayName: string | null;
+}
+
+export interface TiktokAdvertiser {
+  advertiser_id?: string;
+  id?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokAdsResponse {
+  list: TiktokAd[];
+  page?: number;
+  total_page?: number;
+  total_number?: number;
+}
+
+export interface TiktokAd {
+  ad_id: string;
+  ad_name?: string;
+  status?: string;
+  operation_status?: string;
+  campaign_id?: string;
+  adgroup_id?: string;
+  create_time?: string;
+  modify_time?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokCreatorInfo {
+  privacy_level_options?: string[];
+  [key: string]: unknown;
+}
+
+export interface TiktokPostPhotoRequest {
+  photo_images: string[];
+  photo_cover_index: number;
+  title?: string;
+  description?: string;
+  privacy_level?: string;
+}
+
+export interface TiktokPostVideoRequest {
+  video_url: string;
+  title?: string;
+  description?: string;
+  privacy_level?: string;
+  disable_comment?: boolean;
+  disable_duet?: boolean;
+  disable_stitch?: boolean;
+  video_cover_timestamp_ms?: number;
+}
+
+export interface TiktokPublishStatus {
+  status?: string;
+  publish_id?: string;
+  fail_reason?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokCampaignCreateRequest {
+  advertiser_id?: string;
+  campaign_name: string;
+  objective_type: string;
+  budget_mode?: string;
+  budget?: number;
+  operation_status?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokAdgroupCreateRequest {
+  advertiser_id?: string;
+  campaign_id: string;
+  adgroup_name: string;
+  budget?: number;
+  budget_mode?: string;
+  billing_event?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokAdCreateRequest {
+  advertiser_id?: string;
+  adgroup_id: string;
+  ad_name: string;
+  creatives?: unknown[];
+  [key: string]: unknown;
 }
 
 export interface AdCreativeLinkData {
@@ -225,6 +377,21 @@ export interface AdWithInsights {
     cpp: number;
     cpm: number;
   };
+}
+
+export interface GenerateAdData {
+  image: string;
+  link: string;
+  campaign_name: string;
+  adset_name: string;
+  ads: Array<{
+    name: string;
+    primary_text: string;
+    headline: string;
+    description: string;
+  }>;
+  /** Generated image URL per ad (one per ad when provided by backend). */
+  images?: string[];
 }
 
 export interface CreateAdRequest {

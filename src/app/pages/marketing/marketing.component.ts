@@ -17,9 +17,22 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChangeDetectorRef } from '@angular/core';
-import { MarketingService, PriorityItem, CreateAdRequest, AdWithInsights } from '../../services/marketing.service';
+import {
+  MarketingService,
+  PriorityItem,
+  CreateAdRequest,
+  AdWithInsights,
+  GenerateAdData,
+  TiktokStatus,
+  TiktokAd,
+  TiktokAdCreateRequest,
+  TiktokPostPhotoRequest,
+  TiktokPostVideoRequest,
+} from '../../services/marketing.service';
 import { ProductsService } from '../../services/products.service';
+import { ProductService } from '../../services/product.service';
 import { ScheduleService, ScheduleData } from '../../services/schedule.service';
+import { GoogleComponent } from '../../components/marketing/google/google.component';
 
 @Component({
   selector: 'app-marketing',
@@ -42,6 +55,7 @@ import { ScheduleService, ScheduleData } from '../../services/schedule.service';
     MatTableModule,
     MatPaginatorModule,
     MatTooltipModule,
+    GoogleComponent,
   ],
   templateUrl: './marketing.component.html',
   styleUrls: ['./marketing.component.css'],
@@ -49,6 +63,7 @@ import { ScheduleService, ScheduleData } from '../../services/schedule.service';
 export class MarketingComponent implements OnInit {
   selectedChannel: 'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google' = 'overview';
   selectedMetaSection: 'posts' | 'ads' = 'posts';
+  selectedTiktokSection: 'posts' | 'ads' = 'posts';
   
   // Priority items data (using facebook as default)
   priorityItems: PriorityItem[] = [];
@@ -58,6 +73,13 @@ export class MarketingComponent implements OnInit {
   allProducts: any[] = [];
   selectedProductId: string = '';
   isLoadingProducts = false;
+
+  // Create ad: product & landing page for "Generate ad copy"
+  createAdSelectedProductId: string = '';
+  createAdSelectedLandingPageName: string = '';
+  createAdLandingPages: { name: string }[] = [];
+  isLoadingProductForAd = false;
+  isGenerateAdLoading = false;
 
   // Schedule data
   schedule: ScheduleData = {
@@ -70,6 +92,7 @@ export class MarketingComponent implements OnInit {
     instagramNextRunAt: null,
     lastRunAt: null,
     status: 'paused',
+    merchantCenterId: null,
   };
 
   // Form fields for time inputs
@@ -218,6 +241,49 @@ export class MarketingComponent implements OnInit {
   selectedAdsetId: string | null = null;
   isLoadingViewCreative = false;
   viewCreativeImageUrl: string | null = null;
+  // TikTok
+  tiktokStatus: TiktokStatus = { connected: false, advertiserId: null, openId: null, displayName: null };
+  tiktokAdsList: TiktokAd[] = [];
+  isLoadingTiktokStatus = false;
+  isLoadingTiktokAds = false;
+  tiktokAdsPage = 1;
+  tiktokAdsTotalPages = 0;
+  tiktokAdsTotalNumber = 0;
+  isTiktokAdStatusUpdating: { [adId: string]: boolean } = {};
+  tiktokPostPhotoUrls = '';
+  tiktokPostPhotoCoverIndex = 0;
+  tiktokPostTitle = '';
+  tiktokPostDescription = '';
+  tiktokPostPrivacy = 'PUBLIC_TO_EVERYONE';
+  isTiktokPosting = false;
+  tiktokCreatorInfo: { privacy_level_options?: string[] } = {};
+  // Video post
+  tiktokPostVideoUrl = '';
+  tiktokPostVideoTitle = '';
+  tiktokPostVideoPrivacy = 'PUBLIC_TO_EVERYONE';
+  tiktokPostVideoDisableComment = false;
+  tiktokPostVideoDisableDuet = false;
+  tiktokPostVideoDisableStitch = false;
+  isTiktokPostingVideo = false;
+  // Advertiser selection (for ads tab)
+  tiktokAdvertisersList: { advertiser_id?: string; id?: string; name?: string }[] = [];
+  selectedTiktokAdvertiserId: string | null = null;
+  isLoadingTiktokAdvertisers = false;
+  // Create TikTok ad dialog
+  isTiktokCreateAdModalOpen = false;
+  tiktokCreateCampaignName = '';
+  tiktokCreateObjectiveType = 'CONVERSIONS';
+  tiktokCreateCampaignId: string | null = null;
+  tiktokCreateAdgroupName = '';
+  tiktokCreateAdgroupBudget = 50;
+  tiktokCreateAdgroupBillingEvent = 'CPC';
+  tiktokCreateAdgroupId: string | null = null;
+  tiktokCreateAdName = '';
+  tiktokCreateAdLink = '';
+  tiktokCreateAdCaption = '';
+  isTiktokCreateSubmitting = false;
+  tiktokCreateStep: 1 | 2 | 3 = 1;
+
   callToActionOptions = [
     'SHOP_NOW',
     'LEARN_MORE',
@@ -312,6 +378,7 @@ export class MarketingComponent implements OnInit {
   constructor(
     private marketingService: MarketingService,
     private productsService: ProductsService,
+    private productService: ProductService,
     private scheduleService: ScheduleService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
@@ -322,6 +389,20 @@ export class MarketingComponent implements OnInit {
     this.loadProducts();
     this.loadPriorityItems();
     this.loadSchedule();
+    // Check query params for OAuth callback (e.g. ?channel=tiktok&status=connected)
+    const params = new URLSearchParams(window.location.search);
+    const channel = params.get('channel');
+    const status = params.get('status');
+    if (channel === 'tiktok' && status === 'connected') {
+      this.selectedChannel = 'tiktok';
+      this.loadTiktokStatus();
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (channel === 'tiktok' && status === 'error') {
+      this.selectedChannel = 'tiktok';
+      const msg = params.get('message') || 'TikTok connection failed';
+      this.snackBar.open(msg, 'Close', { duration: 5000 });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     // Load overview stats if on overview channel
     if (this.selectedChannel === 'overview') {
       this.loadOverviewStats();
@@ -330,20 +411,349 @@ export class MarketingComponent implements OnInit {
     if (this.selectedChannel === 'meta' && this.selectedMetaSection === 'ads') {
       this.loadAds();
     }
+    if (this.selectedChannel === 'tiktok') {
+      this.loadTiktokStatus();
+      if (this.selectedTiktokSection === 'ads') {
+        this.loadTiktokAdvertisers();
+        this.loadTiktokAds();
+      }
+      if (this.selectedTiktokSection === 'posts') this.loadTiktokCreatorInfo();
+    }
   }
 
   onChannelChange(channel: 'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google') {
     this.selectedChannel = channel;
     if (channel === 'overview') {
-      // Load overview statistics when switching to Overview
       this.loadOverviewStats();
     } else if (channel === 'meta' && this.selectedMetaSection === 'posts') {
-      // Reload priority items when switching to Meta
       this.loadPriorityItems();
     } else if (channel === 'meta' && this.selectedMetaSection === 'ads') {
-      // Load ads when switching to Meta Ads section
       this.loadAds();
+    } else if (channel === 'tiktok') {
+      this.loadTiktokStatus();
+      if (this.selectedTiktokSection === 'ads') {
+        this.loadTiktokAdvertisers();
+        this.loadTiktokAds();
+      }
+      if (this.selectedTiktokSection === 'posts') this.loadTiktokCreatorInfo();
     }
+  }
+
+  onTiktokSectionChange(section: 'posts' | 'ads') {
+    this.selectedTiktokSection = section;
+    if (section === 'ads') {
+      this.loadTiktokAdvertisers();
+      this.loadTiktokAds();
+    }
+    if (section === 'posts') this.loadTiktokCreatorInfo();
+  }
+
+  /** Privacy options from creator_info or default list */
+  get tiktokPrivacyOptions(): string[] {
+    const fromApi = this.tiktokCreatorInfo?.privacy_level_options;
+    if (fromApi && fromApi.length > 0) return fromApi;
+    return ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY'];
+  }
+
+  loadTiktokAdvertisers() {
+    if (!this.tiktokStatus.connected) return;
+    this.isLoadingTiktokAdvertisers = true;
+    this.marketingService.getTiktokAdvertisers().subscribe({
+      next: (res) => {
+        if (res.success && res.data && Array.isArray(res.data)) {
+          this.tiktokAdvertisersList = res.data;
+          if (!this.selectedTiktokAdvertiserId && this.tiktokStatus.advertiserId)
+            this.selectedTiktokAdvertiserId = this.tiktokStatus.advertiserId;
+          if (!this.selectedTiktokAdvertiserId && this.tiktokAdvertisersList.length > 0) {
+            const first = this.tiktokAdvertisersList[0];
+            this.selectedTiktokAdvertiserId = first.advertiser_id || first.id || null;
+          }
+        }
+        this.isLoadingTiktokAdvertisers = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingTiktokAdvertisers = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadTiktokStatus() {
+    this.isLoadingTiktokStatus = true;
+    this.marketingService.getTiktokStatus().subscribe({
+      next: (res) => {
+        if (res.success && res.data) this.tiktokStatus = res.data;
+        this.isLoadingTiktokStatus = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingTiktokStatus = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  connectTiktok() {
+    this.marketingService.getTiktokOAuthStartUrl().subscribe({
+      next: (res) => {
+        if (res.success && res.data?.redirectUrl) window.location.href = res.data.redirectUrl;
+        else this.snackBar.open('Could not get TikTok connect URL', 'Close', { duration: 3000 });
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.error || 'Failed to start TikTok connection', 'Close', { duration: 3000 });
+      },
+    });
+  }
+
+  loadTiktokAds() {
+    if (!this.tiktokStatus.connected) return;
+    this.isLoadingTiktokAds = true;
+    const advertiserId = this.selectedTiktokAdvertiserId || this.tiktokStatus.advertiserId || undefined;
+    this.marketingService.getTiktokAds({ advertiser_id: advertiserId, page: this.tiktokAdsPage, page_size: 10 }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.tiktokAdsList = res.data.list || [];
+          this.tiktokAdsTotalPages = res.data.total_page ?? 0;
+          this.tiktokAdsTotalNumber = res.data.total_number ?? 0;
+        }
+        this.isLoadingTiktokAds = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.error || 'Failed to load TikTok ads', 'Close', { duration: 3000 });
+        this.isLoadingTiktokAds = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  updateTiktokAdStatus(ad: TiktokAd, enable: boolean) {
+    const adId = ad.ad_id;
+    const status = enable ? 'ENABLE' : 'DISABLE';
+    const advertiserId = this.selectedTiktokAdvertiserId || this.tiktokStatus.advertiserId || undefined;
+    this.isTiktokAdStatusUpdating[adId] = true;
+    this.marketingService.updateTiktokAdStatus(adId, status, advertiserId).subscribe({
+      next: () => {
+        this.isTiktokAdStatusUpdating[adId] = false;
+        this.snackBar.open(enable ? 'Ad enabled' : 'Ad disabled', 'Close', { duration: 2000 });
+        this.loadTiktokAds();
+      },
+      error: (err) => {
+        this.isTiktokAdStatusUpdating[adId] = false;
+        this.snackBar.open(err.error?.error || 'Failed to update ad status', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadTiktokCreatorInfo() {
+    if (!this.tiktokStatus.connected) return;
+    this.marketingService.getTiktokCreatorInfo().subscribe({
+      next: (res) => {
+        if (res.success && res.data) this.tiktokCreatorInfo = res.data;
+      },
+      error: () => {},
+    });
+  }
+
+  submitTiktokPostPhoto() {
+    const urls = this.tiktokPostPhotoUrls.trim().split(/\s+/).filter(Boolean);
+    if (urls.length === 0) {
+      this.snackBar.open('Enter at least one image URL', 'Close', { duration: 3000 });
+      return;
+    }
+    const body: TiktokPostPhotoRequest = {
+      photo_images: urls,
+      photo_cover_index: this.tiktokPostPhotoCoverIndex,
+      title: this.tiktokPostTitle.trim() || undefined,
+      description: this.tiktokPostDescription.trim() || undefined,
+      privacy_level: this.tiktokPostPrivacy,
+    };
+    this.isTiktokPosting = true;
+    this.marketingService.postTiktokPhoto(body).subscribe({
+      next: (res) => {
+        this.isTiktokPosting = false;
+        if (res.success && res.data?.publish_id) {
+          this.snackBar.open('Post submitted. Publish ID: ' + res.data!.publish_id, 'Close', { duration: 4000 });
+          this.tiktokPostPhotoUrls = '';
+          this.tiktokPostTitle = '';
+          this.tiktokPostDescription = '';
+          this.pollTiktokPostStatus(res.data!.publish_id);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isTiktokPosting = false;
+        this.snackBar.open(err.error?.error || 'Failed to post photo', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  submitTiktokPostVideo() {
+    const url = this.tiktokPostVideoUrl.trim();
+    if (!url) {
+      this.snackBar.open('Enter a video URL', 'Close', { duration: 3000 });
+      return;
+    }
+    const body: TiktokPostVideoRequest = {
+      video_url: url,
+      title: this.tiktokPostVideoTitle.trim() || undefined,
+      privacy_level: this.tiktokPostVideoPrivacy,
+      disable_comment: this.tiktokPostVideoDisableComment,
+      disable_duet: this.tiktokPostVideoDisableDuet,
+      disable_stitch: this.tiktokPostVideoDisableStitch,
+    };
+    this.isTiktokPostingVideo = true;
+    this.marketingService.postTiktokVideo(body).subscribe({
+      next: (res) => {
+        this.isTiktokPostingVideo = false;
+        if (res.success && res.data?.publish_id) {
+          this.snackBar.open('Video post submitted. Publish ID: ' + res.data!.publish_id, 'Close', { duration: 4000 });
+          this.tiktokPostVideoUrl = '';
+          this.tiktokPostVideoTitle = '';
+          this.pollTiktokPostStatus(res.data!.publish_id);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isTiktokPostingVideo = false;
+        this.snackBar.open(err.error?.error || 'Failed to post video', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private pollTiktokPostStatus(publishId: string, attempt = 0) {
+    const maxAttempts = 20;
+    const delayMs = 3000;
+    if (attempt >= maxAttempts) return;
+    this.marketingService.getTiktokPostStatus(publishId).subscribe({
+      next: (res) => {
+        if (!res.success || !res.data) return;
+        const status = (res.data as { status?: string }).status;
+        if (status === 'PUBLISH_COMPLETE' || status === 'FAILED') {
+          this.snackBar.open(
+            status === 'PUBLISH_COMPLETE' ? 'Post published successfully' : 'Post failed: ' + (res.data as { fail_reason?: string }).fail_reason,
+            'Close',
+            { duration: 4000 }
+          );
+          return;
+        }
+        setTimeout(() => this.pollTiktokPostStatus(publishId, attempt + 1), delayMs);
+      },
+    });
+  }
+
+  openTiktokCreateAdModal() {
+    this.tiktokCreateStep = 1;
+    this.tiktokCreateCampaignName = '';
+    this.tiktokCreateObjectiveType = 'CONVERSIONS';
+    this.tiktokCreateCampaignId = null;
+    this.tiktokCreateAdgroupName = '';
+    this.tiktokCreateAdgroupBudget = 50;
+    this.tiktokCreateAdgroupBillingEvent = 'CPC';
+    this.tiktokCreateAdgroupId = null;
+    this.tiktokCreateAdName = '';
+    this.tiktokCreateAdLink = '';
+    this.tiktokCreateAdCaption = '';
+    this.isTiktokCreateAdModalOpen = true;
+  }
+
+  closeTiktokCreateAdModal() {
+    this.isTiktokCreateAdModalOpen = false;
+  }
+
+  submitTiktokCreateStep1() {
+    if (!this.tiktokCreateCampaignName.trim()) {
+      this.snackBar.open('Campaign name is required', 'Close', { duration: 3000 });
+      return;
+    }
+    this.isTiktokCreateSubmitting = true;
+    this.marketingService.createTiktokCampaign({
+      campaign_name: this.tiktokCreateCampaignName.trim(),
+      objective_type: this.tiktokCreateObjectiveType,
+      budget_mode: 'BUDGET_MODE_INFINITE',
+    }).subscribe({
+      next: (res) => {
+        this.isTiktokCreateSubmitting = false;
+        if (res.success && res.data?.campaign_id) {
+          this.tiktokCreateCampaignId = res.data.campaign_id;
+          this.tiktokCreateStep = 2;
+        } else {
+          this.snackBar.open(res.error || 'Failed to create campaign', 'Close', { duration: 3000 });
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isTiktokCreateSubmitting = false;
+        this.snackBar.open(err.error?.error || 'Failed to create campaign', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  submitTiktokCreateStep2() {
+    if (!this.tiktokCreateAdgroupName.trim() || !this.tiktokCreateCampaignId) return;
+    this.isTiktokCreateSubmitting = true;
+    this.marketingService.createTiktokAdgroup({
+      campaign_id: this.tiktokCreateCampaignId,
+      adgroup_name: this.tiktokCreateAdgroupName.trim(),
+      budget: this.tiktokCreateAdgroupBudget,
+      budget_mode: 'BUDGET_MODE_DAY',
+      billing_event: this.tiktokCreateAdgroupBillingEvent,
+    }).subscribe({
+      next: (res) => {
+        this.isTiktokCreateSubmitting = false;
+        if (res.success && res.data?.adgroup_id) {
+          this.tiktokCreateAdgroupId = res.data.adgroup_id;
+          this.tiktokCreateStep = 3;
+        } else {
+          this.snackBar.open(res.error || 'Failed to create ad group', 'Close', { duration: 3000 });
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isTiktokCreateSubmitting = false;
+        this.snackBar.open(err.error?.error || 'Failed to create ad group', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  submitTiktokCreateStep3() {
+    if (!this.tiktokCreateAdName.trim() || !this.tiktokCreateAdgroupId) return;
+    this.isTiktokCreateSubmitting = true;
+    const body: TiktokAdCreateRequest = {
+      adgroup_id: this.tiktokCreateAdgroupId,
+      ad_name: this.tiktokCreateAdName.trim(),
+    };
+    if (this.tiktokCreateAdCaption || this.tiktokCreateAdLink) {
+      body['creatives'] = [{
+        title: this.tiktokCreateAdCaption || this.tiktokCreateAdName.trim(),
+        call_to_action: 'LEARN_MORE',
+        link: this.tiktokCreateAdLink || undefined,
+      }];
+    }
+    this.marketingService.createTiktokAd(body).subscribe({
+      next: (res) => {
+        this.isTiktokCreateSubmitting = false;
+        if (res.success) {
+          this.snackBar.open('Ad created successfully', 'Close', { duration: 3000 });
+          this.closeTiktokCreateAdModal();
+          this.loadTiktokAds();
+        } else {
+          this.snackBar.open(res.error || 'Failed to create ad', 'Close', { duration: 3000 });
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isTiktokCreateSubmitting = false;
+        this.snackBar.open(err.error?.error || 'Failed to create ad', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   loadProducts() {
@@ -392,9 +802,10 @@ export class MarketingComponent implements OnInit {
     }
 
     this.marketingService
-      .pushPriorityToFront({
+      .pushPriority({
         productId: this.selectedProductId,
-        channel: 'facebook', // Default to facebook
+        channel: 'meta', // Use 'meta' to add to both facebook and instagram
+        position: 'front',
       })
       .subscribe({
         next: (response) => {
@@ -426,9 +837,10 @@ export class MarketingComponent implements OnInit {
     }
 
     this.marketingService
-      .pushPriorityToBack({
+      .pushPriority({
         productId: this.selectedProductId,
-        channel: 'facebook', // Default to facebook
+        channel: 'meta', // Use 'meta' to add to both facebook and instagram
+        position: 'back',
       })
       .subscribe({
         next: (response) => {
@@ -458,7 +870,7 @@ export class MarketingComponent implements OnInit {
       return;
     }
 
-    this.marketingService.clearPriorityItems({ channel: 'facebook' }).subscribe({
+    this.marketingService.clearPriorityItems({ channel: 'meta' }).subscribe({
       next: (response) => {
         if (response.success) {
           this.snackBar.open(
@@ -706,11 +1118,94 @@ export class MarketingComponent implements OnInit {
 
   openCreateAdModal() {
     this.isCreateAdModalOpen = true;
+    if (this.allProducts.length === 0) {
+      this.loadProducts();
+    }
   }
 
   closeCreateAdModal() {
     this.isCreateAdModalOpen = false;
     this.resetAdForm();
+  }
+
+  onCreateAdProductChange() {
+    this.createAdSelectedLandingPageName = '';
+    this.createAdLandingPages = [];
+    if (!this.createAdSelectedProductId) {
+      this.cdr.markForCheck();
+      return;
+    }
+    this.isLoadingProductForAd = true;
+    this.productService.fetchProduct(this.createAdSelectedProductId).subscribe({
+      next: (response) => {
+        if (response.success && response.data?.landingPages?.length) {
+          this.createAdLandingPages = response.data.landingPages.map((lp: { name: string }) => ({ name: lp.name }));
+        } else {
+          this.createAdLandingPages = [];
+          this.snackBar.open('No landing pages found for this product', 'Close', { duration: 3000 });
+        }
+        this.isLoadingProductForAd = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error fetching product for ad:', err);
+        this.snackBar.open('Failed to load product landing pages', 'Close', { duration: 3000 });
+        this.createAdLandingPages = [];
+        this.isLoadingProductForAd = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  generateAdCopy() {
+    if (!this.createAdSelectedProductId) return;
+    this.isGenerateAdLoading = true;
+    const landingPageName = this.createAdSelectedLandingPageName || undefined;
+    this.marketingService.generateAd(this.createAdSelectedProductId, landingPageName).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.applyGeneratedAdData(response.data);
+          this.snackBar.open('Ad copy generated. Review and edit as needed, then create campaign.', 'Close', { duration: 5000 });
+        }
+        this.isGenerateAdLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error generating ad copy:', err);
+        this.snackBar.open(err.error?.message || 'Failed to generate ad copy', 'Close', { duration: 5000 });
+        this.isGenerateAdLoading = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private applyGeneratedAdData(data: GenerateAdData) {
+    this.adForm.campaign.name = data.campaign_name;
+    this.adForm.adset.name = data.adset_name;
+    this.createAdDailyBudgetShillings = 500;
+    if (this.adForm.adset.targeting.geo_locations) {
+      this.adForm.adset.targeting.geo_locations.countries = ['KE'];
+    } else {
+      this.adForm.adset.targeting.geo_locations = { countries: ['KE'] };
+    }
+    const fallbackImageUrl = typeof data.image === 'string' ? data.image : (Array.isArray(data.image) ? (data.image[0] ?? '') : '');
+    this.adForm.ads = data.ads.map((ad, i) => {
+      const imageUrl = (data.images && data.images[i]) ? data.images[i] : fallbackImageUrl;
+      return {
+        name: ad.name,
+        status: 'PAUSED' as const,
+        creative: {
+          link: data.link,
+          message: ad.primary_text,
+          headline: ad.headline,
+          description: ad.description,
+          call_to_action: 'SHOP_NOW',
+          image_url: imageUrl,
+        },
+      };
+    });
+    this.createAdImageFiles = this.adForm.ads.map(() => null);
+    this.cdr.markForCheck();
   }
 
   loadAds(limit: number = 10, after?: string, before?: string) {
@@ -1188,11 +1683,23 @@ export class MarketingComponent implements OnInit {
 
   onCreateAdImageSelected(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
+    const ad = this.adForm.ads[index];
+    if (ad && ad.creative.image_url && ad.creative.image_url.startsWith('blob:')) {
+      URL.revokeObjectURL(ad.creative.image_url);
+    }
     if (input.files && input.files.length > 0) {
-      this.createAdImageFiles[index] = input.files[0];
+      const file = input.files[0];
+      this.createAdImageFiles[index] = file;
+      if (ad) {
+        ad.creative.image_url = URL.createObjectURL(file);
+      }
     } else {
       this.createAdImageFiles[index] = null;
+      if (ad) {
+        ad.creative.image_url = '';
+      }
     }
+    this.cdr.markForCheck();
   }
 
   isUpdateAdFormValid(): boolean {
@@ -1392,6 +1899,15 @@ export class MarketingComponent implements OnInit {
   }
 
   resetAdForm() {
+    // Revoke any blob URLs used for preview to avoid memory leaks
+    (this.adForm?.ads || []).forEach(ad => {
+      if (ad?.creative?.image_url?.startsWith?.('blob:')) {
+        URL.revokeObjectURL(ad.creative.image_url);
+      }
+    });
+    this.createAdSelectedProductId = '';
+    this.createAdSelectedLandingPageName = '';
+    this.createAdLandingPages = [];
     this.adForm = {
       campaign: {
         name: '',
@@ -1438,6 +1954,7 @@ export class MarketingComponent implements OnInit {
         },
       ],
     };
+    this.createAdImageFiles = [null];
   }
 
   // Schedule methods

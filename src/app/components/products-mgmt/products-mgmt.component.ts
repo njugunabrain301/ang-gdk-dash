@@ -318,7 +318,7 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
   hasUnsavedChanges = false;
   selectedTab = 0;
   landingPageIndex = 0;
-  isBusinessAccount = false;
+  isBusinessAccount = true;
   errorMessage = '';
   imageToDelete: string = '';
 
@@ -466,13 +466,16 @@ export class ProductMgmtComponent implements OnInit, DoCheck {
     }
   }
 
+  businessUrl = '';
+
   private async loadUserProfile() {
     try {
       const profile = await this.profileService.getAccountProfile().toPromise();
-      console.log(profile);
+
       if (profile && profile.success) {
         this.isBusinessAccount =
           profile.data.package.toLowerCase() === 'business';
+        this.businessUrl = profile.data?.url ?? '';
       }
     } catch (error) {
       this.showError('Error loading user profile');

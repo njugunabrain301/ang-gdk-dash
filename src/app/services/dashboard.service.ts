@@ -49,6 +49,7 @@ export interface POSInvoice {
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
+  error?: string;
 }
 
 export interface ApiResponseArray<T> {
