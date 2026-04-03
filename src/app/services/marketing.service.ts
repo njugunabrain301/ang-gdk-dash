@@ -86,10 +86,12 @@ export class MarketingService {
   /**
    * Get marketing overview statistics
    */
-  getOverviewStats(): Observable<ApiResponse<{ totalSpend: number; activeAds: number; totalAds: number; clicks: number }>> {
-    return this.httpClient.get<ApiResponse<{ totalSpend: number; activeAds: number; totalAds: number; clicks: number }>>(
-      '/marketing/overview'
-    );
+  getOverviewStats(params?: { date_preset?: string }): Observable<ApiResponse<{ totalSpend: number; activeAds: number; totalAds: number; clicks: number; impressions: number; reach: number; ctr: number; cpc: number }>> {
+    let url = '/marketing/overview';
+    if (params?.date_preset) {
+      url += `?date_preset=${encodeURIComponent(params.date_preset)}`;
+    }
+    return this.httpClient.get<ApiResponse<{ totalSpend: number; activeAds: number; totalAds: number; clicks: number; impressions: number; reach: number; ctr: number; cpc: number }>>(url);
   }
 
   /**
@@ -155,6 +157,11 @@ export class MarketingService {
     );
   }
 
+  generateTiktokAd(productId: string, landingPageName?: string): Observable<ApiResponse<GenerateAdData>> {
+    const body = landingPageName ? { productId, landingPageName } : { productId };
+    return this.httpClient.post<ApiResponse<GenerateAdData>>('/tiktok/generateAd', body);
+  }
+
   /**
    * Update an ad
    */
@@ -184,6 +191,10 @@ export class MarketingService {
 
   getTiktokStatus(): Observable<ApiResponse<TiktokStatus>> {
     return this.httpClient.get<ApiResponse<TiktokStatus>>('/tiktok/status');
+  }
+
+  disconnectTiktok(): Observable<ApiResponse<{ disconnected: boolean }>> {
+    return this.httpClient.post<ApiResponse<{ disconnected: boolean }>>('/tiktok/disconnect', {});
   }
 
   getTiktokAdvertisers(): Observable<ApiResponse<TiktokAdvertiser[]>> {
@@ -219,16 +230,120 @@ export class MarketingService {
     return this.httpClient.get<ApiResponse<TiktokPublishStatus>>(`/tiktok/post/status/${publishId}`);
   }
 
+  getTiktokTargetingLocations(): Observable<ApiResponse<TiktokLocationOption[]>> {
+    return this.httpClient.get<ApiResponse<TiktokLocationOption[]>>('/tiktok/targeting/locations');
+  }
+
+  getTiktokCampaigns(params?: { advertiser_id?: string; page?: number; page_size?: number }): Observable<ApiResponse<TiktokCampaignsResponse>> {
+    const q = new URLSearchParams();
+    if (params?.advertiser_id) q.append('advertiser_id', params.advertiser_id);
+    if (params?.page) q.append('page', params.page.toString());
+    if (params?.page_size) q.append('page_size', params.page_size.toString());
+    const query = q.toString();
+    return this.httpClient.get<ApiResponse<TiktokCampaignsResponse>>(`/tiktok/campaigns${query ? `?${query}` : ''}`);
+  }
+
   createTiktokCampaign(body: TiktokCampaignCreateRequest): Observable<ApiResponse<any>> {
     return this.httpClient.post<ApiResponse<any>>('/tiktok/campaigns', body);
+  }
+
+  getTiktokAdgroups(params?: { advertiser_id?: string; campaign_id?: string; page?: number; page_size?: number }): Observable<ApiResponse<TiktokAdgroupsResponse>> {
+    const q = new URLSearchParams();
+    if (params?.advertiser_id) q.append('advertiser_id', params.advertiser_id);
+    if (params?.campaign_id) q.append('campaign_id', params.campaign_id);
+    if (params?.page) q.append('page', params.page.toString());
+    if (params?.page_size) q.append('page_size', params.page_size.toString());
+    const query = q.toString();
+    return this.httpClient.get<ApiResponse<TiktokAdgroupsResponse>>(`/tiktok/adgroups${query ? `?${query}` : ''}`);
   }
 
   createTiktokAdgroup(body: TiktokAdgroupCreateRequest): Observable<ApiResponse<any>> {
     return this.httpClient.post<ApiResponse<any>>('/tiktok/adgroups', body);
   }
 
+  uploadTiktokAdImage(
+    imageFile: File,
+    advertiser_id?: string,
+    adgroup_id?: string
+  ): Observable<ApiResponse<TiktokImageUploadResponse>> {
+    const form = new FormData();
+    form.append('image_file', imageFile);
+    if (advertiser_id) form.append('advertiser_id', advertiser_id);
+    if (adgroup_id) form.append('adgroup_id', adgroup_id);
+    return this.httpClient.post<ApiResponse<TiktokImageUploadResponse>>('/tiktok/assets/image/upload', form);
+  }
+
+  uploadTiktokAdImageByUrl(
+    imageUrl: string,
+    advertiser_id?: string,
+    adgroup_id?: string
+  ): Observable<ApiResponse<TiktokImageUploadResponse>> {
+    return this.httpClient.post<ApiResponse<TiktokImageUploadResponse>>(
+      '/tiktok/assets/image/upload-by-url',
+      { image_url: imageUrl, advertiser_id, adgroup_id }
+    );
+  }
+
+  uploadTiktokAdVideo(
+    videoFile: File,
+    advertiser_id?: string
+  ): Observable<ApiResponse<TiktokVideoUploadResponse>> {
+    const form = new FormData();
+    form.append('video_file', videoFile);
+    if (advertiser_id) form.append('advertiser_id', advertiser_id);
+    return this.httpClient.post<ApiResponse<TiktokVideoUploadResponse>>('/tiktok/assets/video/upload', form);
+  }
+
+  uploadTiktokAdVideoByUrl(
+    videoUrl: string,
+    advertiser_id?: string
+  ): Observable<ApiResponse<TiktokVideoUploadResponse>> {
+    return this.httpClient.post<ApiResponse<TiktokVideoUploadResponse>>(
+      '/tiktok/assets/video/upload-by-url',
+      { video_url: videoUrl, advertiser_id }
+    );
+  }
+
   createTiktokAd(body: TiktokAdCreateRequest): Observable<ApiResponse<any>> {
     return this.httpClient.post<ApiResponse<any>>('/tiktok/ads', body);
+  }
+
+  updateTiktokCampaign(campaignId: string, body: TiktokCampaignUpdateRequest): Observable<ApiResponse<any>> {
+    return this.httpClient.put<ApiResponse<any>>(`/tiktok/campaigns/${campaignId}`, body);
+  }
+
+  updateTiktokAdgroup(adgroupId: string, body: TiktokAdgroupUpdateRequest): Observable<ApiResponse<any>> {
+    return this.httpClient.put<ApiResponse<any>>(`/tiktok/adgroups/${adgroupId}`, body);
+  }
+
+  updateTiktokAd(adId: string, body: TiktokAdUpdateRequest): Observable<ApiResponse<any>> {
+    return this.httpClient.put<ApiResponse<any>>(`/tiktok/ads/${adId}`, body);
+  }
+
+  getTiktokReporting(params?: { advertiser_id?: string; data_level?: string; start_date?: string; end_date?: string; page?: number; page_size?: number }): Observable<ApiResponse<TiktokReportingResponse>> {
+    const q = new URLSearchParams();
+    if (params?.advertiser_id) q.append('advertiser_id', params.advertiser_id);
+    if (params?.data_level) q.append('data_level', params.data_level);
+    if (params?.start_date) q.append('start_date', params.start_date);
+    if (params?.end_date) q.append('end_date', params.end_date);
+    if (params?.page) q.append('page', params.page.toString());
+    if (params?.page_size) q.append('page_size', params.page_size.toString());
+    const query = q.toString();
+    return this.httpClient.get<ApiResponse<TiktokReportingResponse>>(`/tiktok/reporting${query ? `?${query}` : ''}`);
+  }
+
+  getTiktokImageInfo(imageIds: string[], advertiserId?: string): Observable<ApiResponse<{ list: TiktokImageInfo[] }>> {
+    const q = new URLSearchParams();
+    q.append('image_ids', imageIds.join(','));
+    if (advertiserId) q.append('advertiser_id', advertiserId);
+    return this.httpClient.get<ApiResponse<{ list: TiktokImageInfo[] }>>(`/tiktok/assets/image/info?${q.toString()}`);
+  }
+
+  getTiktokVideoInfo(videoIds: string[], advertiserId?: string): Observable<ApiResponse<{ list: TiktokVideoInfo[] }>> {
+    const q = new URLSearchParams();
+    q.append('video_ids', videoIds.join(','));
+    if (advertiserId) q.append('advertiser_id', advertiserId);
+    return this.httpClient.get<ApiResponse<{ list: TiktokVideoInfo[] }>>(`/tiktok/assets/video/info?${q.toString()}`);
   }
 }
 
@@ -253,6 +368,42 @@ export interface TiktokAdsResponse {
   total_number?: number;
 }
 
+export interface TiktokCampaignsResponse {
+  list: TiktokCampaign[];
+  page?: number;
+  total_page?: number;
+  total_number?: number;
+}
+
+export interface TiktokCampaign {
+  campaign_id?: string;
+  campaign_name?: string;
+  objective_type?: string;
+  status?: string;
+  operation_status?: string;
+  create_time?: string;
+  modify_time?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokAdgroupsResponse {
+  list: TiktokAdgroup[];
+  page?: number;
+  total_page?: number;
+  total_number?: number;
+}
+
+export interface TiktokAdgroup {
+  adgroup_id?: string;
+  adgroup_name?: string;
+  campaign_id?: string;
+  status?: string;
+  operation_status?: string;
+  create_time?: string;
+  modify_time?: string;
+  [key: string]: unknown;
+}
+
 export interface TiktokAd {
   ad_id: string;
   ad_name?: string;
@@ -263,6 +414,26 @@ export interface TiktokAd {
   create_time?: string;
   modify_time?: string;
   [key: string]: unknown;
+}
+
+export interface TiktokMetrics {
+  ad_id?: string;
+  adgroup_id?: string;
+  campaign_id?: string;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  reach: string;
+  frequency: string;
+  ctr: string;
+  cpc: string;
+}
+
+export interface TiktokReportingResponse {
+  list: { dimensions: Record<string, string>; metrics: TiktokMetrics }[];
+  page?: number;
+  total_page?: number;
+  total_number?: number;
 }
 
 export interface TiktokCreatorInfo {
@@ -313,7 +484,31 @@ export interface TiktokAdgroupCreateRequest {
   budget?: number;
   budget_mode?: string;
   billing_event?: string;
+  /** Required for CPC/CPM/OCPM. Bid price in account currency (e.g. USD). */
+  bid_price?: number;
+  /** PLACEMENT_TYPE_AUTOMATIC | PLACEMENT_TYPE_NORMAL */
+  placement_type?: string;
+  /** When placement_type is NORMAL, e.g. ["PLACEMENT_TIKTOK"] */
+  placements?: string[];
+  /** SCHEDULE_FROM_NOW | SCHEDULE_START_END. Required. */
+  schedule_type?: string;
+  /** Schedule start (Unix seconds or ISO string). Required. */
+  schedule_start_time?: number | string;
+  /** Schedule end (Unix seconds or ISO string). Required when schedule_type is SCHEDULE_START_END. */
+  schedule_end_time?: number | string;
+  /** e.g. OPTIMIZATION_GOAL_CLICK, OPTIMIZATION_GOAL_CONVERSION. Required. */
+  optimization_goal?: string;
+  /** e.g. PACING_MODE_SMOOTH. Required. */
+  pacing?: string;
+  /** Targeting: at least one of location_ids or zipcode_ids required by TikTok. */
+  location_ids?: string[];
+  zipcode_ids?: string[];
   [key: string]: unknown;
+}
+
+export interface TiktokLocationOption {
+  id: string;
+  name: string;
 }
 
 export interface TiktokAdCreateRequest {
@@ -321,6 +516,66 @@ export interface TiktokAdCreateRequest {
   adgroup_id: string;
   ad_name: string;
   creatives?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface TiktokImageUploadResponse {
+  image_id: string;
+  raw?: unknown;
+}
+
+export interface TiktokVideoUploadResponse {
+  video_id: string;
+  raw?: unknown;
+}
+
+export interface TiktokCampaignUpdateRequest {
+  advertiser_id?: string;
+  campaign_name?: string;
+  budget?: number;
+  budget_mode?: string;
+  operation_status?: string;
+}
+
+export interface TiktokAdgroupUpdateRequest {
+  advertiser_id?: string;
+  adgroup_name?: string;
+  budget?: number;
+  bid_price?: number;
+  schedule_start_time?: string;
+  schedule_end_time?: string;
+  operation_status?: string;
+}
+
+export interface TiktokAdUpdateRequest {
+  advertiser_id?: string;
+  ad_name?: string;
+  call_to_action?: string;
+  landing_page_url?: string;
+  operation_status?: string;
+  ad_text?: string;
+}
+
+export interface TiktokImageInfo {
+  image_id?: string;
+  image_url?: string;
+  url?: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  [key: string]: unknown;
+}
+
+export interface TiktokVideoInfo {
+  video_id?: string;
+  preview_url?: string;
+  poster_url?: string;
+  url?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  format?: string;
+  bit_rate?: number;
   [key: string]: unknown;
 }
 
@@ -392,6 +647,8 @@ export interface GenerateAdData {
   }>;
   /** Generated image URL per ad (one per ad when provided by backend). */
   images?: string[];
+  /** Generated video URL when available (TikTok generateAd). */
+  video?: string;
 }
 
 export interface CreateAdRequest {

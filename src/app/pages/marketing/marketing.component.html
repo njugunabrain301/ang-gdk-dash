@@ -44,6 +44,39 @@
         <!-- Overview Section -->
         <div *ngIf="selectedChannel === 'overview'" class="p-8">
           <div class="max-w-5xl mx-auto">
+            <div class="flex justify-end mb-4">
+              <mat-form-field appearance="outline" style="width: 160px; margin: 0;">
+                <mat-label>Date Range</mat-label>
+                <mat-select [(ngModel)]="selectedOverviewDatePreset" (selectionChange)="onOverviewDatePresetChange()">
+                  <mat-option *ngFor="let option of datePresetOptions" [value]="option.value">
+                    {{ option.label }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <!-- Overview Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Spend Distribution</h3>
+                <div *ngIf="isLoadingOverview && isLoadingTiktokOverview" class="flex justify-center items-center" style="height: 260px;">
+                  <mat-spinner diameter="32"></mat-spinner>
+                </div>
+                <div *ngIf="!(isLoadingOverview && isLoadingTiktokOverview)" style="height: 260px;">
+                  <canvas baseChart [data]="spendChartData" [options]="spendChartOptions" type="doughnut"></canvas>
+                </div>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Performance Comparison</h3>
+                <div *ngIf="isLoadingOverview && isLoadingTiktokOverview" class="flex justify-center items-center" style="height: 260px;">
+                  <mat-spinner diameter="32"></mat-spinner>
+                </div>
+                <div *ngIf="!(isLoadingOverview && isLoadingTiktokOverview)" style="height: 260px;">
+                  <canvas baseChart [data]="performanceChartData" [options]="performanceChartOptions" type="bar"></canvas>
+                </div>
+              </div>
+            </div>
+
             <!-- Overview Statistics Table -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div class="px-6 py-4 border-b border-gray-200">
@@ -98,6 +131,87 @@
                       <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
                         {{ formatNumber(overviewStats.clicks) }}
                       </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Impressions</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatNumber(overviewStats.impressions) }}
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Reach</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatNumber(overviewStats.reach) }}
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">CTR</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ overviewStats.ctr.toFixed(2) }}%
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">CPC</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
+                        {{ formatCurrency(overviewStats.cpc) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- TikTok Overview -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-6">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">TikTok Marketing Overview</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ getOverviewDatePresetLabel() }}</p>
+              </div>
+
+              <div *ngIf="isLoadingTiktokOverview" class="flex justify-center items-center py-12">
+                <mat-spinner diameter="40"></mat-spinner>
+              </div>
+
+              <div *ngIf="!isLoadingTiktokOverview" class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                        Metric
+                      </th>
+                      <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700 border-b border-gray-200">
+                        Value
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Total Spend</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Ksh. {{ tiktokOverviewStats.spend.toFixed(2) }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Impressions</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ tiktokOverviewStats.impressions.toLocaleString() }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Clicks</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ tiktokOverviewStats.clicks.toLocaleString() }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Reach</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ tiktokOverviewStats.reach.toLocaleString() }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">CTR</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ tiktokOverviewStats.ctr.toFixed(2) }}%</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">CPC</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Ksh. {{ tiktokOverviewStats.cpc.toFixed(2) }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4 text-sm text-gray-600">Frequency</td>
+                      <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ tiktokOverviewStats.frequency.toFixed(1) }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -668,30 +782,50 @@
               <mat-spinner diameter="32"></mat-spinner>
             </div>
             <div *ngIf="!isLoadingTiktokStatus && !tiktokStatus.connected" class="mb-6 p-6 bg-white rounded-xl border border-gray-200">
-              <h3 class="text-lg font-semibold text-gray-800 mb-2">Connect TikTok</h3>
-              <p class="text-gray-600 text-sm mb-4">Connect your TikTok account to post content and manage ads.</p>
+              <h3 class="text-lg font-semibold text-gray-800 mb-2">Connect TikTok Ads</h3>
+              <p class="text-gray-600 text-sm mb-4">Connect your TikTok Ads account to manage campaigns and ads. Content posting to your TikTok profile will be available in a future update.</p>
               <button mat-raised-button color="primary" (click)="connectTiktok()">
                 <mat-icon>link</mat-icon>
-                Connect TikTok Account
+                Connect TikTok Ads
               </button>
             </div>
             <div *ngIf="!isLoadingTiktokStatus && tiktokStatus.connected" class="mb-6">
-              <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                <mat-icon class="text-green-600">check_circle</mat-icon>
-                <span>TikTok connected</span>
-                <span *ngIf="tiktokStatus.displayName"> as {{ tiktokStatus.displayName }}</span>
-                <span *ngIf="tiktokStatus.advertiserId"> (Advertiser ID: {{ tiktokStatus.advertiserId }})</span>
+              <div class="flex items-center justify-between gap-2 flex-wrap mb-4">
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                  <mat-icon class="text-green-600">check_circle</mat-icon>
+                  <span>TikTok Ads connected</span>
+                  <span *ngIf="tiktokStatus.advertiserId"> (Advertiser ID: {{ tiktokStatus.advertiserId }})</span>
+                </div>
+                <button
+                  mat-button
+                  color="warn"
+                  (click)="disconnectTiktok()"
+                  class="text-sm"
+                >
+                  <mat-icon>link_off</mat-icon>
+                  Disconnect
+                </button>
               </div>
               <div class="mb-6 flex space-x-1 border-b border-gray-200">
                 <button
-                  (click)="onTiktokSectionChange('posts')"
-                  [class.text-blue-600]="selectedTiktokSection === 'posts'"
-                  [class.border-b-2]="selectedTiktokSection === 'posts'"
-                  [class.border-blue-600]="selectedTiktokSection === 'posts'"
-                  [class.font-semibold]="selectedTiktokSection === 'posts'"
+                  (click)="onTiktokSectionChange('campaigns')"
+                  [class.text-blue-600]="selectedTiktokSection === 'campaigns'"
+                  [class.border-b-2]="selectedTiktokSection === 'campaigns'"
+                  [class.border-blue-600]="selectedTiktokSection === 'campaigns'"
+                  [class.font-semibold]="selectedTiktokSection === 'campaigns'"
                   class="px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors border-b-2 border-transparent -mb-px"
                 >
-                  Posts
+                  Campaigns
+                </button>
+                <button
+                  (click)="onTiktokSectionChange('adgroups')"
+                  [class.text-blue-600]="selectedTiktokSection === 'adgroups'"
+                  [class.border-b-2]="selectedTiktokSection === 'adgroups'"
+                  [class.border-blue-600]="selectedTiktokSection === 'adgroups'"
+                  [class.font-semibold]="selectedTiktokSection === 'adgroups'"
+                  class="px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors border-b-2 border-transparent -mb-px"
+                >
+                  Ad Groups
                 </button>
                 <button
                   (click)="onTiktokSectionChange('ads')"
@@ -703,70 +837,222 @@
                 >
                   Ads
                 </button>
+                <button
+                  (click)="onTiktokSectionChange('posts')"
+                  [class.text-blue-600]="selectedTiktokSection === 'posts'"
+                  [class.border-b-2]="selectedTiktokSection === 'posts'"
+                  [class.border-blue-600]="selectedTiktokSection === 'posts'"
+                  [class.font-semibold]="selectedTiktokSection === 'posts'"
+                  class="px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors border-b-2 border-transparent -mb-px"
+                >
+                  Posts
+                  <span class="ml-1 text-xs font-normal text-gray-400">(coming soon)</span>
+                </button>
               </div>
 
-              <!-- TikTok Posts -->
-              <div *ngIf="selectedTiktokSection === 'posts'" class="bg-white rounded-xl border border-gray-200 p-6 space-y-8">
-                <!-- Photo post -->
-                <div>
-                  <h4 class="text-lg font-semibold text-gray-800 mb-4">Post photo to TikTok</h4>
-                  <p class="text-sm text-gray-500 mb-4">Enter public image URLs (one per line or space-separated). Domain must be verified in TikTok developer portal.</p>
-                  <div class="space-y-4">
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Image URLs</mat-label>
-                      <textarea matInput [(ngModel)]="tiktokPostPhotoUrls" rows="3" placeholder="https://example.com/image1.jpg https://example.com/image2.jpg"></textarea>
-                    </mat-form-field>
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Cover index (0-based)</mat-label>
-                      <input matInput type="number" [(ngModel)]="tiktokPostPhotoCoverIndex" min="0" />
-                    </mat-form-field>
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Title</mat-label>
-                      <input matInput [(ngModel)]="tiktokPostTitle" maxlength="90" />
-                    </mat-form-field>
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Description</mat-label>
-                      <textarea matInput [(ngModel)]="tiktokPostDescription" rows="2" maxlength="4000"></textarea>
-                    </mat-form-field>
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Privacy</mat-label>
-                      <mat-select [(ngModel)]="tiktokPostPrivacy">
-                        <mat-option *ngFor="let opt of tiktokPrivacyOptions" [value]="opt">{{ opt }}</mat-option>
+              <!-- TikTok Campaigns Tab -->
+              <div *ngIf="selectedTiktokSection === 'campaigns'" class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+                  <h4 class="text-lg font-semibold text-gray-800">TikTok Campaigns</h4>
+                  <button mat-button (click)="loadTiktokCampaignsTab()" [disabled]="isLoadingTiktokCampaignsTab">
+                    <mat-icon>refresh</mat-icon>
+                    Refresh
+                  </button>
+                </div>
+                <div *ngIf="isLoadingTiktokCampaignsTab" class="flex justify-center py-12">
+                  <mat-spinner diameter="40"></mat-spinner>
+                </div>
+                <div *ngIf="!isLoadingTiktokCampaignsTab && tiktokCampaignsTabList.length > 0" class="overflow-x-auto">
+                  <table mat-table [dataSource]="tiktokCampaignsTabList" class="w-full">
+                    <ng-container matColumnDef="campaign_name">
+                      <th mat-header-cell *matHeaderCellDef>Name</th>
+                      <td mat-cell *matCellDef="let c">{{ c.campaign_name || c.campaign_id }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="objective_type">
+                      <th mat-header-cell *matHeaderCellDef>Objective</th>
+                      <td mat-cell *matCellDef="let c">{{ c.objective_type || 'N/A' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="operation_status">
+                      <th mat-header-cell *matHeaderCellDef>Status</th>
+                      <td mat-cell *matCellDef="let c">
+                        <span [class]="(c.operation_status || c.status) === 'ENABLE' ? 'text-green-600 font-medium' : 'text-gray-600'">
+                          {{ c.operation_status || c.status || 'N/A' }}
+                        </span>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="budget">
+                      <th mat-header-cell *matHeaderCellDef>Budget</th>
+                      <td mat-cell *matCellDef="let c">
+                        {{ c.budget ? c.budget : '—' }}
+                        <span *ngIf="c.budget_mode" class="text-xs text-gray-400 ml-1">({{ c.budget_mode }})</span>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="create_time">
+                      <th mat-header-cell *matHeaderCellDef>Created</th>
+                      <td mat-cell *matCellDef="let c">{{ c.create_time || '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="c_impressions">
+                      <th mat-header-cell *matHeaderCellDef>Impressions</th>
+                      <td mat-cell *matCellDef="let c">{{ getMetric(tiktokCampaignMetrics, c.campaign_id, 'impressions') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="c_clicks">
+                      <th mat-header-cell *matHeaderCellDef>Clicks</th>
+                      <td mat-cell *matCellDef="let c">{{ getMetric(tiktokCampaignMetrics, c.campaign_id, 'clicks') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="c_reach">
+                      <th mat-header-cell *matHeaderCellDef>Reach</th>
+                      <td mat-cell *matCellDef="let c">{{ getMetric(tiktokCampaignMetrics, c.campaign_id, 'reach') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="c_spend">
+                      <th mat-header-cell *matHeaderCellDef>Spend</th>
+                      <td mat-cell *matCellDef="let c">{{ getMetric(tiktokCampaignMetrics, c.campaign_id, 'spend') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="campaign_actions">
+                      <th mat-header-cell *matHeaderCellDef>Actions</th>
+                      <td mat-cell *matCellDef="let c">
+                        <div class="flex space-x-1">
+                          <button mat-icon-button color="accent" (click)="openTiktokCampaignView(c)" matTooltip="View details">
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+                          <button mat-icon-button color="primary" (click)="openTiktokCampaignEdit(c)" matTooltip="Edit campaign">
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['campaign_name', 'objective_type', 'operation_status', 'budget', 'c_impressions', 'c_clicks', 'c_reach', 'c_spend', 'create_time', 'campaign_actions']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['campaign_name', 'objective_type', 'operation_status', 'budget', 'c_impressions', 'c_clicks', 'c_reach', 'c_spend', 'create_time', 'campaign_actions']"></tr>
+                  </table>
+                  <div class="flex justify-between items-center mt-4">
+                    <span class="text-sm text-gray-600">Total: {{ tiktokCampaignsTabTotalNumber }} campaigns</span>
+                    <div class="flex gap-2">
+                      <button mat-button [disabled]="tiktokCampaignsTabPage <= 1" (click)="tiktokCampaignsTabPage = tiktokCampaignsTabPage - 1; loadTiktokCampaignsTab()">Previous</button>
+                      <span class="py-2 text-sm">Page {{ tiktokCampaignsTabPage }} of {{ tiktokCampaignsTabTotalPages || 1 }}</span>
+                      <button mat-button [disabled]="tiktokCampaignsTabPage >= tiktokCampaignsTabTotalPages" (click)="tiktokCampaignsTabPage = tiktokCampaignsTabPage + 1; loadTiktokCampaignsTab()">Next</button>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="!isLoadingTiktokCampaignsTab && tiktokCampaignsTabList.length === 0" class="text-center py-12 text-gray-500">
+                  <mat-icon class="text-5xl mb-2">campaign</mat-icon>
+                  <p>No TikTok campaigns yet.</p>
+                  <p class="text-sm mt-1">Create a campaign using the "Create TikTok Ad" button on the Ads tab.</p>
+                </div>
+              </div>
+
+              <!-- TikTok Ad Groups Tab -->
+              <div *ngIf="selectedTiktokSection === 'adgroups'" class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+                  <h4 class="text-lg font-semibold text-gray-800">TikTok Ad Groups</h4>
+                  <div class="flex items-center gap-2">
+                    <mat-form-field appearance="outline" class="!mb-0" style="min-width: 200px;">
+                      <mat-label>Filter by campaign</mat-label>
+                      <mat-select [(ngModel)]="tiktokAdgroupsFilterCampaignId" (selectionChange)="onTiktokAdgroupsFilterChange()">
+                        <mat-option [value]="null">All campaigns</mat-option>
+                        <mat-option *ngFor="let c of tiktokAdgroupsFilterCampaigns" [value]="c.campaign_id">
+                          {{ c.campaign_name || c.campaign_id }}
+                        </mat-option>
                       </mat-select>
                     </mat-form-field>
-                    <button mat-raised-button color="primary" (click)="submitTiktokPostPhoto()" [disabled]="isTiktokPosting || !tiktokPostPhotoUrls.trim()">
-                      <mat-spinner *ngIf="isTiktokPosting" diameter="20" class="inline-block mr-2"></mat-spinner>
-                      {{ isTiktokPosting ? 'Posting...' : 'Post photo' }}
+                    <button mat-button (click)="loadTiktokAdgroupsTab()" [disabled]="isLoadingTiktokAdgroupsTab">
+                      <mat-icon>refresh</mat-icon>
+                      Refresh
                     </button>
                   </div>
                 </div>
-                <!-- Video post -->
-                <div class="border-t border-gray-200 pt-6">
-                  <h4 class="text-lg font-semibold text-gray-800 mb-4">Post video to TikTok</h4>
-                  <p class="text-sm text-gray-500 mb-4">Enter a public video URL (PULL_FROM_URL). Domain must be verified in TikTok developer portal.</p>
-                  <div class="space-y-4">
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Video URL</mat-label>
-                      <input matInput [(ngModel)]="tiktokPostVideoUrl" placeholder="https://example.com/video.mp4" />
-                    </mat-form-field>
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Title / caption</mat-label>
-                      <input matInput [(ngModel)]="tiktokPostVideoTitle" maxlength="2200" />
-                    </mat-form-field>
-                    <mat-form-field class="w-full" appearance="outline">
-                      <mat-label>Privacy</mat-label>
-                      <mat-select [(ngModel)]="tiktokPostVideoPrivacy">
-                        <mat-option *ngFor="let opt of tiktokPrivacyOptions" [value]="opt">{{ opt }}</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                    <mat-slide-toggle [(ngModel)]="tiktokPostVideoDisableComment">Disable comments</mat-slide-toggle>
-                    <mat-slide-toggle [(ngModel)]="tiktokPostVideoDisableDuet">Disable duet</mat-slide-toggle>
-                    <mat-slide-toggle [(ngModel)]="tiktokPostVideoDisableStitch">Disable stitch</mat-slide-toggle>
-                    <button mat-raised-button color="primary" (click)="submitTiktokPostVideo()" [disabled]="isTiktokPostingVideo || !tiktokPostVideoUrl.trim()">
-                      <mat-spinner *ngIf="isTiktokPostingVideo" diameter="20" class="inline-block mr-2"></mat-spinner>
-                      {{ isTiktokPostingVideo ? 'Posting...' : 'Post video' }}
-                    </button>
+                <div *ngIf="isLoadingTiktokAdgroupsTab" class="flex justify-center py-12">
+                  <mat-spinner diameter="40"></mat-spinner>
+                </div>
+                <div *ngIf="!isLoadingTiktokAdgroupsTab && tiktokAdgroupsTabList.length > 0" class="overflow-x-auto">
+                  <table mat-table [dataSource]="tiktokAdgroupsTabList" class="w-full">
+                    <ng-container matColumnDef="adgroup_name">
+                      <th mat-header-cell *matHeaderCellDef>Name</th>
+                      <td mat-cell *matCellDef="let ag">{{ ag.adgroup_name || ag.adgroup_id }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="campaign_id">
+                      <th mat-header-cell *matHeaderCellDef>Campaign</th>
+                      <td mat-cell *matCellDef="let ag">{{ getCampaignName(ag.campaign_id) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="billing_event">
+                      <th mat-header-cell *matHeaderCellDef>Billing</th>
+                      <td mat-cell *matCellDef="let ag">{{ ag.billing_event || 'N/A' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="optimization_goal">
+                      <th mat-header-cell *matHeaderCellDef>Optimization</th>
+                      <td mat-cell *matCellDef="let ag">{{ ag.optimization_goal || 'N/A' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ag_operation_status">
+                      <th mat-header-cell *matHeaderCellDef>Status</th>
+                      <td mat-cell *matCellDef="let ag">
+                        <span [class]="(ag.operation_status || ag.status) === 'ENABLE' ? 'text-green-600 font-medium' : 'text-gray-600'">
+                          {{ ag.operation_status || ag.status || 'N/A' }}
+                        </span>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="ag_budget">
+                      <th mat-header-cell *matHeaderCellDef>Budget / Bid</th>
+                      <td mat-cell *matCellDef="let ag">
+                        <span *ngIf="ag.budget">{{ ag.budget }}</span>
+                        <span *ngIf="ag.bid_price" class="text-xs text-gray-500 ml-1">(bid: {{ ag.bid_price }})</span>
+                        <span *ngIf="!ag.budget && !ag.bid_price">—</span>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="ag_impressions">
+                      <th mat-header-cell *matHeaderCellDef>Impressions</th>
+                      <td mat-cell *matCellDef="let ag">{{ getMetric(tiktokAdgroupMetrics, ag.adgroup_id, 'impressions') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ag_clicks">
+                      <th mat-header-cell *matHeaderCellDef>Clicks</th>
+                      <td mat-cell *matCellDef="let ag">{{ getMetric(tiktokAdgroupMetrics, ag.adgroup_id, 'clicks') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ag_reach">
+                      <th mat-header-cell *matHeaderCellDef>Reach</th>
+                      <td mat-cell *matCellDef="let ag">{{ getMetric(tiktokAdgroupMetrics, ag.adgroup_id, 'reach') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ag_spend">
+                      <th mat-header-cell *matHeaderCellDef>Spend</th>
+                      <td mat-cell *matCellDef="let ag">{{ getMetric(tiktokAdgroupMetrics, ag.adgroup_id, 'spend') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="adgroup_actions">
+                      <th mat-header-cell *matHeaderCellDef>Actions</th>
+                      <td mat-cell *matCellDef="let ag">
+                        <div class="flex space-x-1">
+                          <button mat-icon-button color="accent" (click)="openTiktokAdgroupView(ag)" matTooltip="View details">
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+                          <button mat-icon-button color="primary" (click)="openTiktokAdgroupEdit(ag)" matTooltip="Edit ad group">
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['adgroup_name', 'campaign_id', 'billing_event', 'optimization_goal', 'ag_operation_status', 'ag_budget', 'ag_impressions', 'ag_clicks', 'ag_reach', 'ag_spend', 'adgroup_actions']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['adgroup_name', 'campaign_id', 'billing_event', 'optimization_goal', 'ag_operation_status', 'ag_budget', 'ag_impressions', 'ag_clicks', 'ag_reach', 'ag_spend', 'adgroup_actions']"></tr>
+                  </table>
+                  <div class="flex justify-between items-center mt-4">
+                    <span class="text-sm text-gray-600">Total: {{ tiktokAdgroupsTabTotalNumber }} ad groups</span>
+                    <div class="flex gap-2">
+                      <button mat-button [disabled]="tiktokAdgroupsTabPage <= 1" (click)="tiktokAdgroupsTabPage = tiktokAdgroupsTabPage - 1; loadTiktokAdgroupsTab()">Previous</button>
+                      <span class="py-2 text-sm">Page {{ tiktokAdgroupsTabPage }} of {{ tiktokAdgroupsTabTotalPages || 1 }}</span>
+                      <button mat-button [disabled]="tiktokAdgroupsTabPage >= tiktokAdgroupsTabTotalPages" (click)="tiktokAdgroupsTabPage = tiktokAdgroupsTabPage + 1; loadTiktokAdgroupsTab()">Next</button>
+                    </div>
                   </div>
+                </div>
+                <div *ngIf="!isLoadingTiktokAdgroupsTab && tiktokAdgroupsTabList.length === 0" class="text-center py-12 text-gray-500">
+                  <mat-icon class="text-5xl mb-2">group_work</mat-icon>
+                  <p>No TikTok ad groups found.</p>
+                  <p class="text-sm mt-1">Create an ad group using the "Create TikTok Ad" button on the Ads tab.</p>
+                </div>
+              </div>
+
+              <!-- TikTok Posts -->
+              <div *ngIf="selectedTiktokSection === 'posts'" class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="text-center py-8">
+                  <mat-icon class="text-5xl mb-3 text-gray-300">schedule</mat-icon>
+                  <h4 class="text-lg font-semibold text-gray-800 mb-2">TikTok Posts coming soon</h4>
+                  <p class="text-sm text-gray-500 max-w-xl mx-auto">
+                    Direct posting of photos and videos to your TikTok profile will be available here in a future update.
+                    For now, you can connect TikTok Ads and manage your ad campaigns from the Ads tab.
+                  </p>
                 </div>
               </div>
 
@@ -785,7 +1071,7 @@
                     </mat-form-field>
                     <button mat-raised-button color="primary" (click)="openTiktokCreateAdModal()">
                       <mat-icon>add</mat-icon>
-                      Create ad
+                      Create&nbsp;ad
                     </button>
                     <button mat-button (click)="loadTiktokAds()" [disabled]="isLoadingTiktokAds">
                       <mat-icon>refresh</mat-icon>
@@ -810,23 +1096,52 @@
                         </span>
                       </td>
                     </ng-container>
+                    <ng-container matColumnDef="campaign_id_col">
+                      <th mat-header-cell *matHeaderCellDef>Campaign</th>
+                      <td mat-cell *matCellDef="let ad">{{ getCampaignName(ad.campaign_id) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="adgroup_id_col">
+                      <th mat-header-cell *matHeaderCellDef>Ad Group</th>
+                      <td mat-cell *matCellDef="let ad">{{ getAdgroupName(ad.adgroup_id) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ad_impressions">
+                      <th mat-header-cell *matHeaderCellDef>Impressions</th>
+                      <td mat-cell *matCellDef="let ad">{{ getMetric(tiktokAdMetrics, ad.ad_id, 'impressions') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ad_clicks">
+                      <th mat-header-cell *matHeaderCellDef>Clicks</th>
+                      <td mat-cell *matCellDef="let ad">{{ getMetric(tiktokAdMetrics, ad.ad_id, 'clicks') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ad_reach">
+                      <th mat-header-cell *matHeaderCellDef>Reach</th>
+                      <td mat-cell *matCellDef="let ad">{{ getMetric(tiktokAdMetrics, ad.ad_id, 'reach') }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="ad_spend">
+                      <th mat-header-cell *matHeaderCellDef>Spend</th>
+                      <td mat-cell *matCellDef="let ad">{{ getMetric(tiktokAdMetrics, ad.ad_id, 'spend') }}</td>
+                    </ng-container>
                     <ng-container matColumnDef="actions">
                       <th mat-header-cell *matHeaderCellDef>Actions</th>
                       <td mat-cell *matCellDef="let ad">
-                        <button
-                          mat-icon-button
-                          [color]="(ad.operation_status || ad.status) === 'ENABLE' ? 'warn' : 'primary'"
-                          (click)="updateTiktokAdStatus(ad, (ad.operation_status || ad.status) !== 'ENABLE')"
-                          [disabled]="isTiktokAdStatusUpdating[ad.ad_id]"
-                          [matTooltip]="(ad.operation_status || ad.status) === 'ENABLE' ? 'Disable ad' : 'Enable ad'"
-                        >
-                          <mat-spinner *ngIf="isTiktokAdStatusUpdating[ad.ad_id]" diameter="24"></mat-spinner>
-                          <mat-icon *ngIf="!isTiktokAdStatusUpdating[ad.ad_id]">{{ (ad.operation_status || ad.status) === 'ENABLE' ? 'pause' : 'play_arrow' }}</mat-icon>
-                        </button>
+                        <div class="flex space-x-1">
+                          <button mat-icon-button color="accent" (click)="openTiktokAdView(ad)" matTooltip="View details">
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+                          <button
+                            mat-icon-button
+                            [color]="(ad.operation_status || ad.status) === 'ENABLE' ? 'warn' : 'primary'"
+                            (click)="updateTiktokAdStatus(ad, (ad.operation_status || ad.status) !== 'ENABLE')"
+                            [disabled]="isTiktokAdStatusUpdating[ad.ad_id]"
+                            [matTooltip]="(ad.operation_status || ad.status) === 'ENABLE' ? 'Disable ad' : 'Enable ad'"
+                          >
+                            <mat-spinner *ngIf="isTiktokAdStatusUpdating[ad.ad_id]" diameter="24"></mat-spinner>
+                            <mat-icon *ngIf="!isTiktokAdStatusUpdating[ad.ad_id]">{{ (ad.operation_status || ad.status) === 'ENABLE' ? 'pause' : 'play_arrow' }}</mat-icon>
+                          </button>
+                        </div>
                       </td>
                     </ng-container>
-                    <tr mat-header-row *matHeaderRowDef="['ad_name', 'status', 'actions']"></tr>
-                    <tr mat-row *matRowDef="let row; columns: ['ad_name', 'status', 'actions']"></tr>
+                    <tr mat-header-row *matHeaderRowDef="['ad_name', 'status', 'campaign_id_col', 'adgroup_id_col', 'ad_impressions', 'ad_clicks', 'ad_reach', 'ad_spend', 'actions']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['ad_name', 'status', 'campaign_id_col', 'adgroup_id_col', 'ad_impressions', 'ad_clicks', 'ad_reach', 'ad_spend', 'actions']"></tr>
                   </table>
                   <div class="flex justify-between items-center mt-4">
                     <span class="text-sm text-gray-600">Total: {{ tiktokAdsTotalNumber }} ads</span>
@@ -848,7 +1163,7 @@
 
         <!-- TikTok Create Ad modal -->
         <div *ngIf="isTiktokCreateAdModalOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeTiktokCreateAdModal()">
-          <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6" (click)="$event.stopPropagation()">
+          <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
             <div class="flex justify-between items-center mb-6">
               <h3 class="text-lg font-semibold text-gray-800">Create TikTok Ad</h3>
               <button mat-icon-button (click)="closeTiktokCreateAdModal()">
@@ -858,58 +1173,236 @@
             <div class="space-y-4">
               <p class="text-sm text-gray-500">Step {{ tiktokCreateStep }} of 3</p>
               <ng-container *ngIf="tiktokCreateStep === 1">
-                <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Campaign name</mat-label>
-                  <input matInput [(ngModel)]="tiktokCreateCampaignName" name="tiktokCampaignName" />
-                </mat-form-field>
-                <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Objective</mat-label>
-                  <mat-select [(ngModel)]="tiktokCreateObjectiveType" name="tiktokObjective">
-                    <mat-option value="CONVERSIONS">Conversions</mat-option>
-                    <mat-option value="TRAFFIC">Traffic</mat-option>
-                    <mat-option value="REACH">Reach</mat-option>
-                    <mat-option value="VIDEO_VIEWS">Video views</mat-option>
-                    <mat-option value="LEAD_GENERATION">Lead generation</mat-option>
-                  </mat-select>
-                </mat-form-field>
-                <button mat-raised-button color="primary" (click)="submitTiktokCreateStep1()" [disabled]="isTiktokCreateSubmitting || !tiktokCreateCampaignName.trim()">
-                  {{ isTiktokCreateSubmitting ? 'Creating...' : 'Create campaign' }}
-                </button>
+                <p class="text-sm font-medium text-gray-700 mb-2">Choose a campaign</p>
+                <mat-radio-group [(ngModel)]="tiktokCreateCampaignMode" name="tiktokCampaignMode" class="flex flex-col gap-2 mb-4">
+                  <mat-radio-button value="new">Create new campaign</mat-radio-button>
+                  <mat-radio-button value="existing">Select existing campaign</mat-radio-button>
+                </mat-radio-group>
+
+                <ng-container *ngIf="tiktokCreateCampaignMode === 'existing'">
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Existing campaign</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateCampaignId" name="tiktokExistingCampaign" [disabled]="isLoadingTiktokCampaigns">
+                      <mat-option [value]="null">— Select campaign —</mat-option>
+                      <mat-option *ngFor="let c of tiktokCampaignsList" [value]="c.campaign_id != null ? (c.campaign_id + '') : null">
+                        {{ c.campaign_name || c.campaign_id || 'Campaign' }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-hint *ngIf="isLoadingTiktokCampaigns">Loading campaigns...</mat-hint>
+                    <mat-hint *ngIf="!isLoadingTiktokCampaigns && tiktokCampaignsList.length === 0">No campaigns found. Create a new one instead.</mat-hint>
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" (click)="submitTiktokCreateStep1()" [disabled]="!tiktokCreateCampaignId" class="mt-2">
+                    Next
+                  </button>
+                </ng-container>
+
+                <ng-container *ngIf="tiktokCreateCampaignMode === 'new'">
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Campaign name</mat-label>
+                    <input matInput [(ngModel)]="tiktokCreateCampaignName" name="tiktokCampaignName" />
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Objective</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateObjectiveType" name="tiktokObjective">
+                      <mat-option value="CONVERSIONS">Conversions</mat-option>
+                      <mat-option value="TRAFFIC">Traffic</mat-option>
+                      <mat-option value="REACH">Reach</mat-option>
+                      <mat-option value="VIDEO_VIEWS">Video views</mat-option>
+                      <mat-option value="LEAD_GENERATION">Lead generation</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" (click)="submitTiktokCreateStep1()" [disabled]="isTiktokCreateSubmitting || !tiktokCreateCampaignName.trim()">
+                    {{ isTiktokCreateSubmitting ? 'Creating...' : 'Create campaign' }}
+                  </button>
+                </ng-container>
               </ng-container>
               <ng-container *ngIf="tiktokCreateStep === 2">
-                <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Ad group name</mat-label>
-                  <input matInput [(ngModel)]="tiktokCreateAdgroupName" name="tiktokAdgroupName" />
-                </mat-form-field>
-                <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Daily budget (USD)</mat-label>
-                  <input matInput type="number" [(ngModel)]="tiktokCreateAdgroupBudget" name="tiktokAdgroupBudget" min="1" />
-                </mat-form-field>
-                <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Billing event</mat-label>
-                  <mat-select [(ngModel)]="tiktokCreateAdgroupBillingEvent" name="tiktokBillingEvent">
-                    <mat-option value="CPC">CPC</mat-option>
-                    <mat-option value="CPM">CPM</mat-option>
-                    <mat-option value="OCPM">OCPM</mat-option>
-                  </mat-select>
-                </mat-form-field>
-                <button mat-raised-button color="primary" (click)="submitTiktokCreateStep2()" [disabled]="isTiktokCreateSubmitting || !tiktokCreateAdgroupName.trim()">
-                  {{ isTiktokCreateSubmitting ? 'Creating...' : 'Create ad group' }}
-                </button>
+                <p class="text-sm font-medium text-gray-700 mb-2">Choose an ad group</p>
+                <mat-radio-group [(ngModel)]="tiktokCreateAdgroupMode" name="tiktokAdgroupMode" class="flex flex-col gap-2 mb-4" (ngModelChange)="$event === 'existing' && loadTiktokAdgroups()">
+                  <mat-radio-button value="new">Create new ad group</mat-radio-button>
+                  <mat-radio-button value="existing">Select existing ad group</mat-radio-button>
+                </mat-radio-group>
+
+                <ng-container *ngIf="tiktokCreateAdgroupMode === 'existing'">
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Existing ad group</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupSelectedId" name="tiktokExistingAdgroup" [disabled]="isLoadingTiktokAdgroups">
+                      <mat-option [value]="null">— Select ad group —</mat-option>
+                      <mat-option *ngFor="let ag of tiktokAdgroupsList" [value]="ag.adgroup_id != null ? (ag.adgroup_id + '') : null">
+                        {{ ag.adgroup_name || ag.adgroup_id || 'Ad group' }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-hint *ngIf="isLoadingTiktokAdgroups">Loading ad groups...</mat-hint>
+                    <mat-hint *ngIf="!isLoadingTiktokAdgroups && tiktokAdgroupsList.length === 0">No ad groups in this campaign. Create a new one instead.</mat-hint>
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" (click)="submitTiktokCreateStep2UseExisting()" [disabled]="!tiktokCreateAdgroupSelectedId" class="mt-2">
+                    Next
+                  </button>
+                </ng-container>
+
+                <ng-container *ngIf="tiktokCreateAdgroupMode === 'new'">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Ad group name</mat-label>
+                    <input matInput [(ngModel)]="tiktokCreateAdgroupName" name="tiktokAdgroupName" />
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Daily budget (USD)</mat-label>
+                    <input matInput type="number" [(ngModel)]="tiktokCreateAdgroupBudget" name="tiktokAdgroupBudget" min="1" />
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Billing event</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupBillingEvent" name="tiktokBillingEvent">
+                      <mat-option value="CPC">CPC</mat-option>
+                      <mat-option value="CPM">CPM</mat-option>
+                      <mat-option value="OCPM">OCPM</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Bid price (USD)</mat-label>
+                    <input matInput type="number" [(ngModel)]="tiktokCreateAdgroupBidPrice" name="tiktokAdgroupBidPrice" min="0.01" step="0.01" />
+                    <mat-hint>Required for CPC/CPM/OCPM. Max cost per click (CPC) or per 1000 impressions (CPM).</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Optimization goal</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupOptimizationGoal" name="tiktokOptimizationGoal">
+                      <mat-option *ngFor="let opt of tiktokOptimizationGoalOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+                    </mat-select>
+                    <mat-hint>What the ad group optimizes for.</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field class="w-full md:col-span-2" appearance="outline">
+                    <mat-label>Targeting locations</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupLocationIds" name="tiktokLocationIds" multiple>
+                      <mat-option *ngFor="let loc of tiktokLocationOptions" [value]="loc.id">{{ loc.name }}</mat-option>
+                    </mat-select>
+                    <mat-hint>At least one location required. Select countries/regions where ads can show.</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Placement type</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupPlacementType" name="tiktokPlacementType">
+                      <mat-option value="PLACEMENT_TYPE_AUTOMATIC">Automatic (recommended)</mat-option>
+                      <mat-option value="PLACEMENT_TYPE_NORMAL">Manual – choose placements</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field *ngIf="tiktokCreateAdgroupPlacementType === 'PLACEMENT_TYPE_NORMAL'" class="w-full" appearance="outline">
+                    <mat-label>Placements</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupPlacements" name="tiktokPlacements" multiple>
+                      <mat-option value="PLACEMENT_TIKTOK">TikTok (in-feed, etc.)</mat-option>
+                      <mat-option value="PLACEMENT_PANGLE">Pangle</mat-option>
+                    </mat-select>
+                    <mat-hint>Where your ads can show.</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Schedule type</mat-label>
+                    <mat-select [(ngModel)]="tiktokCreateAdgroupScheduleType" name="tiktokScheduleType">
+                      <mat-option value="SCHEDULE_FROM_NOW">From start time (no end)</mat-option>
+                      <mat-option value="SCHEDULE_START_END">Start and end time</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Schedule start time</mat-label>
+                    <input matInput type="datetime-local" [(ngModel)]="tiktokCreateAdgroupScheduleStart" name="tiktokAdgroupScheduleStart" />
+                    <mat-hint>When delivery starts (local time).</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field *ngIf="tiktokCreateAdgroupScheduleType === 'SCHEDULE_START_END'" class="w-full" appearance="outline">
+                    <mat-label>Schedule end time</mat-label>
+                    <input matInput type="datetime-local" [(ngModel)]="tiktokCreateAdgroupScheduleEnd" name="tiktokAdgroupScheduleEnd" />
+                    <mat-hint>When delivery stops.</mat-hint>
+                  </mat-form-field>
+                </div>
+                <div class="mt-4">
+                  <button mat-raised-button color="primary" (click)="submitTiktokCreateStep2()" [disabled]="isTiktokCreateSubmitting || !tiktokCreateAdgroupName.trim() || tiktokCreateAdgroupLocationIds.length === 0">
+                    {{ isTiktokCreateSubmitting ? 'Creating...' : 'Create ad group' }}
+                  </button>
+                </div>
+                </ng-container>
               </ng-container>
               <ng-container *ngIf="tiktokCreateStep === 3">
+                <p class="text-sm font-medium text-gray-700 mb-2">Ad creative (TikTok)</p>
+
+                <!-- AI Ad Generation -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                  <p class="text-sm font-medium text-gray-700 mb-3">Generate ad with AI (optional)</p>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <mat-form-field class="w-full" appearance="outline">
+                      <mat-label>Product</mat-label>
+                      <mat-select [(ngModel)]="tiktokCreateAdSelectedProductId" name="tiktokAdProduct" (selectionChange)="onTiktokCreateAdProductChange()">
+                        <mat-option value="">-- Select product --</mat-option>
+                        <mat-option *ngFor="let p of allProducts" [value]="p._id">{{ p.name }}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <mat-form-field class="w-full" appearance="outline" *ngIf="tiktokCreateAdLandingPages.length > 0">
+                      <mat-label>Landing page</mat-label>
+                      <mat-select [(ngModel)]="tiktokCreateAdSelectedLandingPageName" name="tiktokAdLandingPage">
+                        <mat-option value="">-- Select landing page --</mat-option>
+                        <mat-option *ngFor="let lp of tiktokCreateAdLandingPages" [value]="lp.name">{{ lp.name }}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div class="flex items-center gap-3 mt-1">
+                    <button
+                      mat-raised-button
+                      color="accent"
+                      [disabled]="!tiktokCreateAdSelectedProductId || isTiktokGenerateAdLoading || isLoadingTiktokProductForAd"
+                      (click)="generateTiktokAdCopy()"
+                    >
+                      <mat-icon class="mr-1" style="font-size: 18px; width: 18px; height: 18px;">auto_awesome</mat-icon>
+                      {{ isTiktokGenerateAdLoading ? 'Generating...' : 'Generate ad' }}
+                    </button>
+                    <mat-spinner *ngIf="isTiktokGenerateAdLoading" diameter="24"></mat-spinner>
+                    <span *ngIf="isLoadingTiktokProductForAd" class="text-xs text-gray-500">Loading product...</span>
+                  </div>
+                </div>
+
                 <mat-form-field class="w-full" appearance="outline">
                   <mat-label>Ad name</mat-label>
                   <input matInput [(ngModel)]="tiktokCreateAdName" name="tiktokAdName" />
+                  <mat-hint>Required. Used as ad name and creative name in TikTok.</mat-hint>
                 </mat-form-field>
                 <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Caption / title</mat-label>
-                  <input matInput [(ngModel)]="tiktokCreateAdCaption" name="tiktokAdCaption" />
+                  <mat-label>Ad text / caption</mat-label>
+                  <input matInput [(ngModel)]="tiktokCreateAdCaption" name="tiktokAdCaption" placeholder="Headline or description for the ad" />
+                  <mat-hint>Sent as ad_text. Shown with the ad; defaults to ad name if empty.</mat-hint>
                 </mat-form-field>
                 <mat-form-field class="w-full" appearance="outline">
-                  <mat-label>Link (optional)</mat-label>
-                  <input matInput [(ngModel)]="tiktokCreateAdLink" name="tiktokAdLink" placeholder="https://" />
+                  <mat-label>Landing page URL</mat-label>
+                  <input matInput [(ngModel)]="tiktokCreateAdLink" name="tiktokCreateAdLink" placeholder="https://" />
+                  <mat-hint>Destination URL (landing_page_url). Optional; use for traffic/website ads.</mat-hint>
                 </mat-form-field>
+                <div class="w-full mb-4 space-y-3">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Upload image (optional)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        (change)="onTiktokCreateAdImageSelected($event)"
+                        class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200"
+                      />
+                      <div *ngIf="tiktokCreateAdImagePreviewUrl" class="mt-2 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                        <img [src]="tiktokCreateAdImagePreviewUrl" alt="Image preview" class="w-full h-auto object-contain" style="max-height: 320px;" />
+                      </div>
+                      <p class="mt-1 text-xs text-gray-500">
+                        If selected (and no video file is uploaded), backend uploads this image to TikTok and uses the returned image_id in creatives.
+                      </p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Upload video (optional)</label>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        (change)="onTiktokCreateAdVideoSelected($event)"
+                        class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200"
+                      />
+                      <div *ngIf="tiktokCreateAdVideoPreviewUrl" class="mt-2 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                        <video [src]="tiktokCreateAdVideoPreviewUrl" controls class="w-full h-auto object-contain" style="max-height: 320px;"></video>
+                      </div>
+                      <p class="mt-1 text-xs text-gray-500">
+                        If selected, backend uploads this video to TikTok and uses the returned video_id in creatives (recommended when using a TikTok identity).
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 <button mat-raised-button color="primary" (click)="submitTiktokCreateStep3()" [disabled]="isTiktokCreateSubmitting || !tiktokCreateAdName.trim()">
                   {{ isTiktokCreateSubmitting ? 'Creating...' : 'Create ad' }}
                 </button>
@@ -1517,3 +2010,508 @@
     </div>
   </div>
 </div>
+
+<!-- TikTok Campaign View Modal -->
+<div *ngIf="isTiktokCampaignViewOpen && selectedTiktokCampaignForView" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeTiktokCampaignView()">
+  <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">campaign</mat-icon>
+        Campaign Details
+      </h2>
+      <button mat-icon-button (click)="closeTiktokCampaignView()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-6 min-h-0 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-sm font-medium text-gray-500">Name</div>
+          <div class="text-gray-900">{{ selectedTiktokCampaignForView.campaign_name || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Objective</div>
+          <div class="text-gray-900">{{ selectedTiktokCampaignForView.objective_type || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Status</div>
+          <div [class]="(selectedTiktokCampaignForView.operation_status || selectedTiktokCampaignForView.status) === 'ENABLE' ? 'text-green-600 font-semibold' : 'text-gray-900'">
+            {{ selectedTiktokCampaignForView.operation_status || selectedTiktokCampaignForView.status || '—' }}
+          </div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Budget</div>
+          <div class="text-gray-900">
+            {{ selectedTiktokCampaignForView['budget'] || '—' }}
+            <span *ngIf="selectedTiktokCampaignForView['budget_mode']" class="text-xs text-gray-400 ml-1">({{ selectedTiktokCampaignForView['budget_mode'] }})</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Created</div>
+          <div class="text-gray-900">{{ selectedTiktokCampaignForView.create_time || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Modified</div>
+          <div class="text-gray-900">{{ selectedTiktokCampaignForView.modify_time || '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="border-t pt-4">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Performance (Last 30 Days)</h3>
+        <div *ngIf="isLoadingTiktokCampaignMetrics" class="flex justify-center py-4">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+        <div *ngIf="!isLoadingTiktokCampaignMetrics" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Impressions</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'impressions') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Clicks</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'clicks') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Reach</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'reach') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Spend</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'spend') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">CTR</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'ctr') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">CPC</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'cpc') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Frequency</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokCampaignMetrics, selectedTiktokCampaignForView.campaign_id, 'frequency') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t pt-4">
+        <h4 class="text-md font-semibold text-gray-700 mb-3">Ad Groups in this Campaign</h4>
+        <div *ngIf="isLoadingCampaignChildAdgroups" class="flex justify-center py-4">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+        <div *ngIf="!isLoadingCampaignChildAdgroups && tiktokCampaignChildAdgroups.length > 0">
+          <div *ngFor="let ag of tiktokCampaignChildAdgroups" class="flex items-center justify-between py-2 px-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 rounded">
+            <div>
+              <span class="text-sm font-medium text-gray-800">{{ ag.adgroup_name || ag.adgroup_id }}</span>
+            </div>
+            <span [class]="(ag.operation_status || ag.status) === 'ENABLE' ? 'text-xs text-green-600 font-medium' : 'text-xs text-gray-500'">
+              {{ ag.operation_status || ag.status || 'N/A' }}
+            </span>
+          </div>
+        </div>
+        <div *ngIf="!isLoadingCampaignChildAdgroups && tiktokCampaignChildAdgroups.length === 0" class="text-sm text-gray-500 py-2">
+          No ad groups found for this campaign.
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-4 border-t">
+        <button mat-raised-button (click)="closeTiktokCampaignView()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok Campaign Edit Modal -->
+<div *ngIf="isTiktokCampaignEditOpen && selectedTiktokCampaignForEdit" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeTiktokCampaignEdit()">
+  <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">edit</mat-icon>
+        Edit Campaign
+      </h2>
+      <button mat-icon-button (click)="closeTiktokCampaignEdit()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-6 min-h-0">
+      <div class="space-y-4">
+        <div class="p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+          <strong>Note:</strong> Objective type cannot be changed after campaign creation.
+        </div>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Campaign Name</mat-label>
+          <input matInput [(ngModel)]="tiktokCampaignEditForm.campaign_name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="tiktokCampaignEditForm.operation_status">
+            <mat-option value="ENABLE">Enable</mat-option>
+            <mat-option value="DISABLE">Disable</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Budget Mode</mat-label>
+          <mat-select [(ngModel)]="tiktokCampaignEditForm.budget_mode">
+            <mat-option value="">— No change —</mat-option>
+            <mat-option value="BUDGET_MODE_DAY">Daily</mat-option>
+            <mat-option value="BUDGET_MODE_TOTAL">Lifetime</mat-option>
+            <mat-option value="BUDGET_MODE_INFINITE">Unlimited</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full" *ngIf="tiktokCampaignEditForm.budget_mode && tiktokCampaignEditForm.budget_mode !== 'BUDGET_MODE_INFINITE'">
+          <mat-label>Budget</mat-label>
+          <input matInput type="number" [(ngModel)]="tiktokCampaignEditForm.budget" min="0" />
+        </mat-form-field>
+      </div>
+      <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
+        <button mat-raised-button (click)="closeTiktokCampaignEdit()" [disabled]="isTiktokCampaignEditSubmitting">Cancel</button>
+        <button mat-raised-button color="primary" (click)="submitTiktokCampaignEdit()" [disabled]="isTiktokCampaignEditSubmitting">
+          <mat-icon *ngIf="isTiktokCampaignEditSubmitting">hourglass_empty</mat-icon>
+          {{ isTiktokCampaignEditSubmitting ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok Ad Group View Modal -->
+<div *ngIf="isTiktokAdgroupViewOpen && selectedTiktokAdgroupForView" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeTiktokAdgroupView()">
+  <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">group_work</mat-icon>
+        Ad Group Details
+      </h2>
+      <button mat-icon-button (click)="closeTiktokAdgroupView()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-6 min-h-0 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-sm font-medium text-gray-500">Name</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView.adgroup_name || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Campaign</div>
+          <div class="text-gray-900">{{ getCampaignName(selectedTiktokAdgroupForView.campaign_id) }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Status</div>
+          <div [class]="(selectedTiktokAdgroupForView.operation_status || selectedTiktokAdgroupForView.status) === 'ENABLE' ? 'text-green-600 font-semibold' : 'text-gray-900'">
+            {{ selectedTiktokAdgroupForView.operation_status || selectedTiktokAdgroupForView.status || '—' }}
+          </div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Promotion Type</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView['promotion_type'] || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Billing Event</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView['billing_event'] || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Optimization Goal</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView['optimization_goal'] || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Budget</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView['budget'] || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Bid Price</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView['bid_price'] || '—' }}</div>
+        </div>
+        <div class="min-w-0">
+          <div class="text-sm font-medium text-gray-500">Placements</div>
+          <div class="text-gray-900 break-all">{{ selectedTiktokAdgroupForView['placements'] || selectedTiktokAdgroupForView['placement_type'] || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Schedule</div>
+          <div class="text-gray-900 text-sm">
+            <span *ngIf="selectedTiktokAdgroupForView['schedule_start_time']">Start: {{ selectedTiktokAdgroupForView['schedule_start_time'] }}</span>
+            <span *ngIf="selectedTiktokAdgroupForView['schedule_end_time']"> — End: {{ selectedTiktokAdgroupForView['schedule_end_time'] }}</span>
+            <span *ngIf="!selectedTiktokAdgroupForView['schedule_start_time']">—</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Created</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView.create_time || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Modified</div>
+          <div class="text-gray-900">{{ selectedTiktokAdgroupForView.modify_time || '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="border-t pt-4">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Performance (Last 30 Days)</h3>
+        <div *ngIf="isLoadingTiktokAdgroupMetrics" class="flex justify-center py-4">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+        <div *ngIf="!isLoadingTiktokAdgroupMetrics" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Impressions</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'impressions') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Clicks</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'clicks') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Reach</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'reach') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Spend</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'spend') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">CTR</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'ctr') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">CPC</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'cpc') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Frequency</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdgroupMetrics, selectedTiktokAdgroupForView.adgroup_id, 'frequency') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t pt-4">
+        <h4 class="text-md font-semibold text-gray-700 mb-3">Ads in this Ad Group</h4>
+        <div *ngIf="isLoadingAdgroupChildAds" class="flex justify-center py-4">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+        <div *ngIf="!isLoadingAdgroupChildAds && tiktokAdgroupChildAds.length > 0">
+          <div *ngFor="let ad of tiktokAdgroupChildAds" class="flex items-center justify-between py-2 px-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 rounded">
+            <div>
+              <span class="text-sm font-medium text-gray-800">{{ ad.ad_name || ad.ad_id }}</span>
+            </div>
+            <span [class]="(ad.operation_status || ad.status) === 'ENABLE' ? 'text-xs text-green-600 font-medium' : 'text-xs text-gray-500'">
+              {{ ad.operation_status || ad.status || 'N/A' }}
+            </span>
+          </div>
+        </div>
+        <div *ngIf="!isLoadingAdgroupChildAds && tiktokAdgroupChildAds.length === 0" class="text-sm text-gray-500 py-2">
+          No ads found for this ad group.
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-4 border-t">
+        <button mat-raised-button (click)="closeTiktokAdgroupView()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok Ad Group Edit Modal -->
+<div *ngIf="isTiktokAdgroupEditOpen && selectedTiktokAdgroupForEdit" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeTiktokAdgroupEdit()">
+  <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">edit</mat-icon>
+        Edit Ad Group
+      </h2>
+      <button mat-icon-button (click)="closeTiktokAdgroupEdit()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-6 min-h-0">
+      <div class="space-y-4">
+        <div class="p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+          <strong>Note:</strong> Objective, billing event, placements, and promotion type cannot be changed after creation.
+        </div>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Ad Group Name</mat-label>
+          <input matInput [(ngModel)]="tiktokAdgroupEditForm.adgroup_name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="tiktokAdgroupEditForm.operation_status">
+            <mat-option value="ENABLE">Enable</mat-option>
+            <mat-option value="DISABLE">Disable</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Budget</mat-label>
+          <input matInput type="number" [(ngModel)]="tiktokAdgroupEditForm.budget" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Bid Price</mat-label>
+          <input matInput type="number" [(ngModel)]="tiktokAdgroupEditForm.bid_price" min="0" step="0.01" />
+        </mat-form-field>
+      </div>
+      <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
+        <button mat-raised-button (click)="closeTiktokAdgroupEdit()" [disabled]="isTiktokAdgroupEditSubmitting">Cancel</button>
+        <button mat-raised-button color="primary" (click)="submitTiktokAdgroupEdit()" [disabled]="isTiktokAdgroupEditSubmitting">
+          <mat-icon *ngIf="isTiktokAdgroupEditSubmitting">hourglass_empty</mat-icon>
+          {{ isTiktokAdgroupEditSubmitting ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok Ad View Modal -->
+<div *ngIf="isTiktokAdViewOpen && selectedTiktokAdForView" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeTiktokAdView()">
+  <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+    <div class="flex-shrink-0 bg-white border-b p-4 flex justify-between items-center">
+      <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+        <mat-icon class="mr-2 text-blue-600">ads_click</mat-icon>
+        TikTok Ad Details
+      </h2>
+      <button mat-icon-button (click)="closeTiktokAdView()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-6 min-h-0 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-sm font-medium text-gray-500">Ad Name</div>
+          <div class="text-gray-900">{{ selectedTiktokAdForView.ad_name || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Ad ID</div>
+          <div class="text-gray-900 text-sm">{{ selectedTiktokAdForView.ad_id || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Status</div>
+          <div [class]="(selectedTiktokAdForView.operation_status || selectedTiktokAdForView.status) === 'ENABLE' ? 'text-green-600 font-semibold' : 'text-gray-900'">
+            {{ selectedTiktokAdForView.operation_status || selectedTiktokAdForView.status || '—' }}
+          </div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Ad Group</div>
+          <div class="text-gray-900 text-sm">{{ getAdgroupName(selectedTiktokAdForView.adgroup_id) }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Campaign</div>
+          <div class="text-gray-900 text-sm">{{ getCampaignName(selectedTiktokAdForView.campaign_id) }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Call to Action</div>
+          <div class="text-gray-900">{{ selectedTiktokAdForView['call_to_action'] || '—' }}</div>
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-sm font-medium text-gray-500">Ad Text</div>
+          <div class="text-gray-900 whitespace-pre-line">{{ selectedTiktokAdForView['ad_text'] || '—' }}</div>
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-sm font-medium text-gray-500">Landing Page URL</div>
+          <div class="text-blue-700 break-all text-sm">{{ selectedTiktokAdForView['landing_page_url'] || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Created</div>
+          <div class="text-gray-900">{{ selectedTiktokAdForView.create_time || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-gray-500">Modified</div>
+          <div class="text-gray-900">{{ selectedTiktokAdForView.modify_time || '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="border-t pt-4">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Performance (Last 30 Days)</h3>
+        <div *ngIf="isLoadingTiktokAdMetrics" class="flex justify-center py-4">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+        <div *ngIf="!isLoadingTiktokAdMetrics" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Impressions</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'impressions') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Clicks</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'clicks') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Reach</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'reach') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Spend</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'spend') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">CTR</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'ctr') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">CPC</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'cpc') }}</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xs text-gray-500">Frequency</div>
+            <div class="text-lg font-semibold text-gray-900">{{ getMetric(tiktokAdMetrics, selectedTiktokAdForView.ad_id, 'frequency') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Creative Media -->
+      <div *ngIf="isLoadingTiktokAdCreatives" class="flex justify-center py-6">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <div *ngIf="!isLoadingTiktokAdCreatives && (tiktokAdViewImages.length > 0 || tiktokAdViewVideos.length > 0)" class="space-y-4">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Creative Media</h3>
+
+        <div *ngIf="tiktokAdViewImages.length > 0">
+          <div class="text-xs font-medium text-gray-500 mb-2">Images</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div *ngFor="let img of tiktokAdViewImages" class="border rounded-lg overflow-hidden bg-gray-50">
+              <img
+                [src]="img.image_url || img.url || img['material_img_url']"
+                [alt]="img.image_id || 'Ad image'"
+                class="w-full h-auto object-contain max-h-64"
+                *ngIf="img.image_url || img.url || img['material_img_url']"
+              />
+              <div class="px-2 py-1 text-xs text-gray-500">
+                <span *ngIf="img.width && img.height">{{ img.width }}×{{ img.height }}</span>
+                <span *ngIf="img.format" class="ml-2">{{ img.format }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="tiktokAdViewVideos.length > 0">
+          <div class="text-xs font-medium text-gray-500 mb-2">Video</div>
+          <div *ngFor="let vid of tiktokAdViewVideos" class="border rounded-lg overflow-hidden bg-gray-50">
+            <video
+              *ngIf="vid.preview_url || vid.url || vid['preview_url_expire_time']"
+              [src]="vid.preview_url || vid.url"
+              [poster]="vid.poster_url || vid['video_cover_url'] || ''"
+              controls
+              class="w-full max-h-80 bg-black"
+            ></video>
+            <img
+              *ngIf="!vid.preview_url && !vid.url && (vid.poster_url || vid['video_cover_url'])"
+              [src]="vid.poster_url || vid['video_cover_url']"
+              alt="Video thumbnail"
+              class="w-full h-auto object-contain max-h-64"
+            />
+            <div class="px-3 py-2 text-xs text-gray-500 flex gap-3">
+              <span *ngIf="vid.duration">Duration: {{ vid.duration }}s</span>
+              <span *ngIf="vid.width && vid.height">{{ vid.width }}×{{ vid.height }}</span>
+              <span *ngIf="vid.bit_rate">{{ (vid.bit_rate / 1000) | number:'1.0-0' }} kbps</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoadingTiktokAdCreatives && tiktokAdViewImages.length === 0 && tiktokAdViewVideos.length === 0 && !$any(selectedTiktokAdForView['image_ids'])?.length && !selectedTiktokAdForView['video_id']" class="text-center py-4 text-gray-400 text-sm">
+        No creative media attached to this ad.
+      </div>
+
+      <div class="flex justify-end pt-4 border-t">
+        <button mat-raised-button (click)="closeTiktokAdView()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
