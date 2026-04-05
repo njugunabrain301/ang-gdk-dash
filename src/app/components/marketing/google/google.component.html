@@ -182,7 +182,8 @@
                 <td class="py-3 px-2 font-medium text-gray-900">{{ c.name || c.id }}</td>
                 <td class="py-3 px-2"><span [class.text-green-600]="c.status === 'ENABLED'" [class.text-amber-600]="c.status === 'PAUSED'">{{ c.status }}</span></td>
                 <td class="py-3 px-2 text-gray-600">{{ costFromMicros(c.budgetAmountMicros) }}</td>
-                <td class="py-3 px-2">
+                <td class="py-3 px-2 flex flex-wrap gap-1 items-center">
+                  <button mat-button (click)="openEditCampaignBudget(c)">Edit budget</button>
                   <button *ngIf="c.status === 'ENABLED'" mat-button color="warn" (click)="pauseCampaign(c)">Pause</button>
                   <button *ngIf="c.status === 'PAUSED'" mat-button color="primary" (click)="enableCampaign(c)">Enable</button>
                 </td>
@@ -402,7 +403,7 @@
           <input type="number" [(ngModel)]="createCampaignAmountMicros" class="w-full border rounded px-3 py-2" min="0" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Merchant Center ID (optional if linked)</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Merchant Center ID</label>
           <input type="text" [(ngModel)]="createCampaignMerchantId" class="w-full border rounded px-3 py-2" placeholder="e.g. 123456789" />
         </div>
       </div>
@@ -410,6 +411,31 @@
         <button mat-button (click)="closeCreateCampaignModal()">Cancel</button>
         <button mat-raised-button color="primary" (click)="submitCreateCampaign()" [disabled]="createCampaignSubmitting">
           {{ createCampaignSubmitting ? 'Creating…' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit campaign budget modal -->
+  <div
+    *ngIf="showEditCampaignBudgetModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+    (click)="closeEditCampaignBudgetModal()"
+  >
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Edit daily budget</h3>
+      <p class="text-sm text-gray-700 mb-1">Campaign: <strong>{{ editBudgetCampaignName }}</strong></p>
+      <p class="text-xs text-gray-500 mb-4">
+        If this budget is shared with other campaigns in Google Ads, all linked campaigns will use the new amount.
+      </p>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Daily budget (micros, e.g. 1000000 = 1 unit)</label>
+        <input type="number" [(ngModel)]="editBudgetAmountMicros" class="w-full border rounded px-3 py-2" min="0" />
+      </div>
+      <div class="flex justify-end gap-2 mt-6">
+        <button mat-button (click)="closeEditCampaignBudgetModal()">Cancel</button>
+        <button mat-raised-button color="primary" (click)="submitEditCampaignBudget()" [disabled]="editBudgetSubmitting">
+          {{ editBudgetSubmitting ? 'Saving…' : 'Save' }}
         </button>
       </div>
     </div>
@@ -530,7 +556,27 @@
             Create Shopping Ad
           </button>
         </div>
-        <div class="bg-gray-50 rounded-lg border border-gray-100 p-4 mb-6">
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button
+            mat-stroked-button
+            type="button"
+            [color]="shoppingAdsMode === 'metrics' ? 'primary' : undefined"
+            (click)="setShoppingAdsMode('metrics')"
+            [disabled]="isLoadingShoppingAds"
+          >
+            Performance (metrics)
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [color]="shoppingAdsMode === 'inventory' ? 'primary' : undefined"
+            (click)="setShoppingAdsMode('inventory')"
+            [disabled]="isLoadingShoppingAds"
+          >
+            All ads
+          </button>
+        </div>
+        <div *ngIf="shoppingAdsMode === 'metrics'" class="bg-gray-50 rounded-lg border border-gray-100 p-4 mb-6">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Date range for metrics</p>
           <div class="flex flex-wrap items-center gap-4">
             <label class="flex items-center gap-2 text-sm text-gray-600">
@@ -541,11 +587,14 @@
               To
               <input type="date" [(ngModel)]="shoppingAdsTo" class="border border-gray-200 rounded px-3 py-2 text-sm bg-white" />
             </label>
-            <button mat-raised-button color="primary" (click)="loadShoppingAds()" [disabled]="isLoadingShoppingAds">Apply</button>
+            <button mat-raised-button color="primary" (click)="loadShoppingAds(true)" [disabled]="isLoadingShoppingAds">Apply</button>
             <span *ngIf="shoppingAdsDateFrom && shoppingAdsDateTo && !isLoadingShoppingAds" class="text-sm text-gray-500">
               Showing results for {{ shoppingAdsDateFrom }} – {{ shoppingAdsDateTo }}
             </span>
           </div>
+        </div>
+        <div *ngIf="shoppingAdsMode === 'inventory'" class="bg-gray-50 rounded-lg border border-gray-100 p-4 mb-6 text-sm text-gray-600">
+          Lists every non-removed Shopping product ad (paginated). Clicks and cost are not loaded in this mode.
         </div>
         <div *ngIf="isLoadingShoppingAds && shoppingAds.length === 0" class="flex justify-center items-center py-12">
           <mat-spinner diameter="40"></mat-spinner>
@@ -556,7 +605,9 @@
             <thead class="text-gray-600 border-b border-gray-200">
               <tr>
                 <th class="py-3 px-2 font-medium">Campaign</th>
+                <th class="py-3 px-2 font-medium">Ad group</th>
                 <th class="py-3 px-2 font-medium">Name / ID</th>
+                <th class="py-3 px-2 font-medium" [matTooltip]="shoppingAdsMode === 'metrics' ? 'Earliest day in the selected range with metrics for this ad. Not the account creation date.' : 'Shown in Performance mode with a date range.'">First activity</th>
                 <th class="py-3 px-2 font-medium">Type</th>
                 <th class="py-3 px-2 font-medium">Status</th>
                 <th class="py-3 px-2 font-medium">Clicks</th>
@@ -567,7 +618,9 @@
             <tbody>
               <tr *ngFor="let a of shoppingAds" class="border-b border-gray-100 hover:bg-gray-50">
                 <td class="py-3 px-2 text-gray-700">{{ a.campaignName ?? a.campaignId ?? '—' }}</td>
+                <td class="py-3 px-2 text-gray-700">{{ a.adGroupName ?? a.adGroupId ?? '—' }}</td>
                 <td class="py-3 px-2 font-medium text-gray-900">{{ a.name || a.id }}</td>
+                <td class="py-3 px-2 text-gray-600">{{ a.firstActivityDate || '—' }}</td>
                 <td class="py-3 px-2 text-gray-600">{{ a.type || '—' }}</td>
                 <td class="py-3 px-2"><span [class.text-green-600]="a.status === 'ENABLED'" [class.text-amber-600]="a.status === 'PAUSED'">{{ a.status }}</span></td>
                 <td class="py-3 px-2 text-gray-600">{{ (a.clicks ?? 0) | number }}</td>
@@ -576,7 +629,7 @@
                   <span class="inline-flex items-center gap-1">
                     <button *ngIf="a.status === 'ENABLED'" mat-button color="warn" (click)="pauseShoppingAd(a)">Pause</button>
                     <button *ngIf="a.status === 'PAUSED'" mat-button color="primary" (click)="enableShoppingAd(a)">Enable</button>
-                    <button mat-button color="primary" (click)="openProducts(a.campaignId ?? '', a.campaignName)">
+                    <button mat-button color="primary" (click)="openProducts(a)">
                       <mat-icon>inventory_2</mat-icon>
                       View products
                     </button>
@@ -586,15 +639,27 @@
             </tbody>
           </table>
         </div>
+        <div *ngIf="!isLoadingShoppingAds && !shoppingAdsError && shoppingAds.length > 0" class="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t border-gray-100">
+          <span class="text-sm text-gray-500">Page size: {{ shoppingAdsPageSize }}</span>
+          <div class="flex gap-2">
+            <button mat-stroked-button type="button" (click)="shoppingAdsPrevPage()" [disabled]="!shoppingAdsCanGoPrev() || isLoadingShoppingAds">
+              Previous
+            </button>
+            <button mat-stroked-button type="button" (click)="shoppingAdsNextPage()" [disabled]="!shoppingAdsCanGoNext() || isLoadingShoppingAds">
+              Next
+            </button>
+          </div>
+        </div>
         <div *ngIf="!isLoadingShoppingAds && !shoppingAdsError && shoppingAds.length === 0" class="text-center py-8 text-gray-500">
           <mat-icon class="text-4xl text-gray-300 mb-2">shopping_bag</mat-icon>
           <p class="font-medium">No Shopping ads found.</p>
-          <p *ngIf="shoppingAdsDateFrom && shoppingAdsDateTo" class="text-sm mt-1">
+          <p *ngIf="shoppingAdsMode === 'metrics' && shoppingAdsDateFrom && shoppingAdsDateTo" class="text-sm mt-1">
             No data for {{ shoppingAdsDateFrom }} – {{ shoppingAdsDateTo }}. Try a different date range.
           </p>
-          <p *ngIf="!shoppingAdsDateFrom || !shoppingAdsDateTo" class="text-sm mt-1">
+          <p *ngIf="shoppingAdsMode === 'metrics' && (!shoppingAdsDateFrom || !shoppingAdsDateTo)" class="text-sm mt-1">
             Select a date range above and click Apply.
           </p>
+          <p *ngIf="shoppingAdsMode === 'inventory'" class="text-sm mt-1">No ads on this page. Use Next if available, or create an ad above.</p>
         </div>
       </div>
     </mat-card>
@@ -632,19 +697,23 @@
   </div>
 
   <!-- Products drawer (side panel) -->
-  <div *ngIf="productsForCampaignId" class="fixed inset-0 z-50 flex justify-end bg-black/30" (click)="closeProducts()">
+  <div *ngIf="productsDrawerAdGroupId" class="fixed inset-0 z-50 flex justify-end bg-black/30" (click)="closeProducts()">
     <div class="w-full max-w-2xl bg-white shadow-xl overflow-auto" (click)="$event.stopPropagation()">
       <div class="p-6 border-b border-gray-200 flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-800">
-          Products in campaign
-          <span *ngIf="productsForCampaignName" class="text-gray-600 font-normal"> — {{ productsForCampaignName }}</span>
+          Products in ad group
+          <span *ngIf="productsDrawerAdGroupName" class="text-gray-600 font-normal"> — {{ productsDrawerAdGroupName }}</span>
+          <span *ngIf="productsDrawerCampaignName" class="text-gray-500 text-base font-normal block sm:inline sm:ml-1">({{ productsDrawerCampaignName }})</span>
         </h3>
         <button mat-icon-button (click)="closeProducts()" aria-label="Close">
           <mat-icon>close</mat-icon>
         </button>
       </div>
       <div class="p-6">
-        <p *ngIf="productsDateFrom && productsDateTo" class="text-sm text-gray-500 mb-4">Period: {{ productsDateFrom }} – {{ productsDateTo }}</p>
+        <p *ngIf="productsForCampaignMode === 'inventory'" class="text-xs text-gray-500 mb-4 max-w-xl">
+          Merchant Center product offers targeted in this ad group’s Shopping listing groups — not filtered by the ads table date range.
+        </p>
+        <p *ngIf="productsForCampaignMode === 'metrics' && productsDateFrom && productsDateTo" class="text-sm text-gray-500 mb-4">Period: {{ productsDateFrom }} – {{ productsDateTo }}</p>
         <div *ngIf="loadingProducts" class="flex justify-center items-center py-12">
           <mat-spinner diameter="40"></mat-spinner>
         </div>
@@ -654,27 +723,28 @@
             <thead class="text-gray-600 border-b border-gray-200">
               <tr>
                 <th class="py-3 px-2 font-medium">Product</th>
-                <th class="py-3 px-2 font-medium">Impressions</th>
-                <th class="py-3 px-2 font-medium">Clicks</th>
-                <th class="py-3 px-2 font-medium">Cost</th>
-                <th class="py-3 px-2 font-medium">Conversions</th>
-                <th class="py-3 px-2 font-medium">Conv. value</th>
+                <th *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 font-medium">Impressions</th>
+                <th *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 font-medium">Clicks</th>
+                <th *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 font-medium">Cost</th>
+                <th *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 font-medium">Conversions</th>
+                <th *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 font-medium">Conv. value</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let p of productsForCampaign" class="border-b border-gray-100 hover:bg-gray-50">
-                <td class="py-3 px-2 font-medium text-gray-900">{{ p.productTitle || p.productItemId || '—' }}</td>
-                <td class="py-3 px-2 text-gray-600">{{ p.impressions | number }}</td>
-                <td class="py-3 px-2 text-gray-600">{{ p.clicks | number }}</td>
-                <td class="py-3 px-2 text-gray-600">{{ costFromMicros(p.costMicros) }}</td>
-                <td class="py-3 px-2 text-gray-600">{{ p.conversions | number }}</td>
-                <td class="py-3 px-2 text-gray-600">{{ p.conversionsValue | number:'1.2-2' }}</td>
+                <td class="py-3 px-2 font-medium text-gray-900">{{ p.gProductName || p.productTitle || p.productItemId || '—' }}</td>
+                <td *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 text-gray-600">{{ p.impressions | number }}</td>
+                <td *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 text-gray-600">{{ p.clicks | number }}</td>
+                <td *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 text-gray-600">{{ costFromMicros(p.costMicros) }}</td>
+                <td *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 text-gray-600">{{ p.conversions | number }}</td>
+                <td *ngIf="productsForCampaignMode === 'metrics'" class="py-3 px-2 text-gray-600">{{ p.conversionsValue | number:'1.2-2' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div *ngIf="!loadingProducts && !productsError && productsForCampaign.length === 0" class="text-center py-8 text-gray-500">
-          <p>No product data for this period.</p>
+          <p *ngIf="productsForCampaignMode === 'metrics'">No product data for this period.</p>
+          <p *ngIf="productsForCampaignMode === 'inventory'">No listing-group products found for this ad group (e.g. “All products” or non–unit partitions may not list individual offers here).</p>
         </div>
       </div>
     </div>

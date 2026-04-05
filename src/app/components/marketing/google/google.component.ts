@@ -17,6 +17,7 @@ import {
   MetricsResponse,
   ShoppingAdProduct,
   ProductFeedItem,
+  ShoppingAdsResponse,
 } from '../../../services/google-ads.service';
 
 @Component({
@@ -76,6 +77,9 @@ export class GoogleComponent implements OnInit {
 
   // Shopping Ads
   shoppingAds: GoogleShoppingAd[] = [];
+  /** Performance = metrics + dates; All ads = inventory (no date filter on API) */
+  shoppingAdsMode: 'metrics' | 'inventory' = 'metrics';
+  shoppingAdsPageSize = 10;
   shoppingAdsFrom = this.dateToString(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
   shoppingAdsTo = this.dateToString(new Date());
   /** Last applied date range from the API response (for empty-state message) */
@@ -83,11 +87,24 @@ export class GoogleComponent implements OnInit {
   shoppingAdsDateTo: string | null = null;
   isLoadingShoppingAds = false;
   shoppingAdsError: string | null = null;
+  /** Pagination: token sent to Google for current page */
+  shoppingAdsRequestPageToken: string | undefined = undefined;
+  shoppingAdsNextPageToken: string | null = null;
+  /** Stack of prior request tokens for Previous (undefined = first page) */
+  shoppingAdsTokenTrail: (string | undefined)[] = [];
+  /** Buffered ads from Google (metrics and inventory); UI shows `shoppingAdsPageSize` rows at a time */
+  shoppingAdsMetricsBuffer: GoogleShoppingAd[] = [];
+  /** First row index of current view (handles partial last page before more API data) */
+  shoppingAdsMetricsListStart = 0;
+  /** Stack of list starts before each Next (for Previous within buffered data) */
+  shoppingAdsMetricsStartStack: number[] = [];
 
-  // Products drawer (campaign products)
-  productsForCampaignId: string | null = null;
-  productsForCampaignName: string | null = null;
+  // Products drawer (scoped to the row’s Shopping ad group)
+  productsDrawerAdGroupId: string | null = null;
+  productsDrawerAdGroupName: string | null = null;
+  productsDrawerCampaignName: string | null = null;
   productsForCampaign: ShoppingAdProduct[] = [];
+  productsForCampaignMode: 'inventory' | 'metrics' | null = null;
   productsDateFrom: string | null = null;
   productsDateTo: string | null = null;
   loadingProducts = false;
@@ -99,6 +116,12 @@ export class GoogleComponent implements OnInit {
   createCampaignAmountMicros = 1_000_000; // 1 unit default
   createCampaignMerchantId = '';
   createCampaignSubmitting = false;
+
+  showEditCampaignBudgetModal = false;
+  editBudgetCampaignId = '';
+  editBudgetCampaignName = '';
+  editBudgetAmountMicros = 1_000_000;
+  editBudgetSubmitting = false;
 
   // Create ad group modal (Phase 3)
   showCreateAdGroupModal = false;
@@ -237,7 +260,7 @@ export class GoogleComponent implements OnInit {
         this.loadAdGroupsForCampaign(this.selectedAdGroupsCampaignId);
       }
     }
-    if (section === 'ads') this.loadShoppingAds();
+    if (section === 'ads') this.loadShoppingAds(true);
   }
 
   loadOverviewMetrics() {
@@ -290,74 +313,224 @@ export class GoogleComponent implements OnInit {
     });
   }
 
-  loadShoppingAds() {
-    if (!this.googleConnectionStatus.connected) return;
-    this.isLoadingShoppingAds = true;
-    this.shoppingAdsError = null;
-    this.shoppingAds = [];
-    this.googleAdsService.getShoppingAds({
-      limit: 20,
-      from: this.shoppingAdsFrom,
-      to: this.shoppingAdsTo,
-    }).subscribe({
-      next: (res) => {
-        if (res.success && res.data) {
-          this.shoppingAds = res.data.data ?? [];
-          this.shoppingAdsDateFrom = res.data.from ?? null;
-          this.shoppingAdsDateTo = res.data.to ?? null;
-        }
-        this.isLoadingShoppingAds = false;
-      },
-      error: (err) => {
-        const msg = err?.error?.error || err?.message || 'Failed to load shopping ads';
-        this.shoppingAdsError = msg;
-        this.shoppingAds = [];
-        this.isLoadingShoppingAds = false;
-        console.error('[Google Shopping Ads] Request failed:', {
-          message: msg,
-          status: err?.status,
-          statusText: err?.statusText,
-          backendError: err?.error?.error,
-          backendDetails: err?.error?.details,
-          fullError: err,
-        });
-      },
-    });
+  private shoppingAdsRowKey(a: GoogleShoppingAd): string {
+    return `${a.campaignId ?? ''}|${a.adGroupId ?? ''}|${a.id ?? ''}`;
   }
 
-  openProducts(campaignId: string, campaignName?: string) {
-    if (!campaignId) return;
-    this.productsForCampaignId = campaignId;
-    this.productsForCampaignName = campaignName || null;
+  private mergeDedupeShoppingAds(existing: GoogleShoppingAd[], incoming: GoogleShoppingAd[]): GoogleShoppingAd[] {
+    const m = new Map<string, GoogleShoppingAd>();
+    for (const a of existing) {
+      m.set(this.shoppingAdsRowKey(a), { ...a });
+    }
+    for (const a of incoming) {
+      const k = this.shoppingAdsRowKey(a);
+      if (!m.has(k)) m.set(k, { ...a });
+    }
+    return Array.from(m.values());
+  }
+
+  private applyMetricsShoppingAdsPage() {
+    const size = this.shoppingAdsPageSize;
+    const start = this.shoppingAdsMetricsListStart;
+    this.shoppingAds = this.shoppingAdsMetricsBuffer.slice(start, start + size);
+  }
+
+  private readShoppingAdsNextToken(payload: ShoppingAdsResponse): string | null {
+    const anyPayload = payload as { nextPageToken?: string; next_page_token?: string };
+    const t = anyPayload?.nextPageToken ?? anyPayload?.next_page_token ?? null;
+    return typeof t === 'string' && t.length > 0 ? t : null;
+  }
+
+  /**
+   * @param reset true: first API page (clear pagination trail and buffer)
+   * @param append true: merge next Google page into buffer and advance the visible slice (after nextPageToken)
+   */
+  loadShoppingAds(reset = false, append = false) {
+    if (!this.googleConnectionStatus.connected) return;
+    if (reset) {
+      this.shoppingAdsTokenTrail = [];
+      this.shoppingAdsRequestPageToken = undefined;
+      this.shoppingAdsMetricsBuffer = [];
+      this.shoppingAdsMetricsListStart = 0;
+      this.shoppingAdsMetricsStartStack = [];
+    }
+    this.isLoadingShoppingAds = true;
+    this.shoppingAdsError = null;
+    if (!append) {
+      this.shoppingAds = [];
+    }
+    this.googleAdsService
+      .getShoppingAds({
+        mode: this.shoppingAdsMode,
+        pageToken: this.shoppingAdsRequestPageToken,
+        from: this.shoppingAdsMode === 'metrics' ? this.shoppingAdsFrom : undefined,
+        to: this.shoppingAdsMode === 'metrics' ? this.shoppingAdsTo : undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const payload = res.data;
+            const incoming = payload.data ?? [];
+            this.shoppingAdsDateFrom = payload.from ?? null;
+            this.shoppingAdsDateTo = payload.to ?? null;
+            this.shoppingAdsNextPageToken = this.readShoppingAdsNextToken(payload);
+
+            if (append) {
+              const start = this.shoppingAdsMetricsListStart;
+              const prevLen = this.shoppingAdsMetricsBuffer.length;
+              this.shoppingAdsMetricsBuffer = this.mergeDedupeShoppingAds(this.shoppingAdsMetricsBuffer, incoming);
+              const span = Math.min(this.shoppingAdsPageSize, Math.max(0, prevLen - start));
+              this.shoppingAdsMetricsListStart = start + span;
+              this.applyMetricsShoppingAdsPage();
+            } else {
+              this.shoppingAdsMetricsBuffer = [...incoming];
+              this.shoppingAdsMetricsListStart = 0;
+              this.applyMetricsShoppingAdsPage();
+            }
+          } else {
+            if (!append) {
+              this.shoppingAds = [];
+              this.shoppingAdsMetricsBuffer = [];
+              this.shoppingAdsMetricsListStart = 0;
+            }
+            this.shoppingAdsNextPageToken = null;
+          }
+          this.isLoadingShoppingAds = false;
+        },
+        error: (err) => {
+          const msg = err?.error?.error || err?.message || 'Failed to load shopping ads';
+          this.shoppingAdsError = msg;
+          if (!append) {
+            this.shoppingAds = [];
+            this.shoppingAdsMetricsBuffer = [];
+            this.shoppingAdsMetricsListStart = 0;
+            this.shoppingAdsMetricsStartStack = [];
+          } else {
+            this.shoppingAdsMetricsStartStack.pop();
+          }
+          this.shoppingAdsNextPageToken = null;
+          this.isLoadingShoppingAds = false;
+          console.error('[Google Shopping Ads] Request failed:', {
+            message: msg,
+            status: err?.status,
+            statusText: err?.statusText,
+            backendError: err?.error?.error,
+            backendDetails: err?.error?.details,
+            fullError: err,
+          });
+        },
+      });
+  }
+
+  onShoppingAdsModeChange() {
+    this.loadShoppingAds(true);
+  }
+
+  setShoppingAdsMode(m: 'metrics' | 'inventory') {
+    if (this.shoppingAdsMode === m) return;
+    this.shoppingAdsMode = m;
+    this.onShoppingAdsModeChange();
+  }
+
+  shoppingAdsNextPage() {
+    if (this.isLoadingShoppingAds) return;
+    const buf = this.shoppingAdsMetricsBuffer;
+    const size = this.shoppingAdsPageSize;
+    const start = this.shoppingAdsMetricsListStart;
+    const span = Math.min(size, Math.max(0, buf.length - start));
+    const nextStart = start + span;
+    if (nextStart < buf.length) {
+      this.shoppingAdsMetricsStartStack.push(start);
+      this.shoppingAdsMetricsListStart = nextStart;
+      this.applyMetricsShoppingAdsPage();
+      return;
+    }
+    if (!this.shoppingAdsNextPageToken) return;
+    this.shoppingAdsMetricsStartStack.push(this.shoppingAdsMetricsListStart);
+    this.shoppingAdsTokenTrail.push(this.shoppingAdsRequestPageToken);
+    this.shoppingAdsRequestPageToken = this.shoppingAdsNextPageToken;
+    this.loadShoppingAds(false, true);
+  }
+
+  shoppingAdsPrevPage() {
+    if (this.isLoadingShoppingAds) return;
+    if (this.shoppingAdsMetricsStartStack.length > 0) {
+      this.shoppingAdsMetricsListStart = this.shoppingAdsMetricsStartStack.pop()!;
+      this.applyMetricsShoppingAdsPage();
+      return;
+    }
+    if (this.shoppingAdsTokenTrail.length === 0) return;
+    const prev = this.shoppingAdsTokenTrail.pop();
+    this.shoppingAdsRequestPageToken = prev;
+    this.shoppingAdsMetricsStartStack = [];
+    this.loadShoppingAds(false, false);
+  }
+
+  shoppingAdsCanGoPrev(): boolean {
+    if (this.shoppingAdsMetricsStartStack.length > 0) return true;
+    return this.shoppingAdsTokenTrail.length > 0;
+  }
+
+  shoppingAdsCanGoNext(): boolean {
+    const buf = this.shoppingAdsMetricsBuffer;
+    const size = this.shoppingAdsPageSize;
+    const start = this.shoppingAdsMetricsListStart;
+    const span = Math.min(size, Math.max(0, buf.length - start));
+    if (start + span < buf.length) return true;
+    return !!this.shoppingAdsNextPageToken;
+  }
+
+  openProducts(ad: GoogleShoppingAd) {
+    const adGroupId = ad.adGroupId != null && String(ad.adGroupId).trim() !== '' ? String(ad.adGroupId).trim() : '';
+    if (!adGroupId) {
+      this.snackBar.open('This ad has no ad group id; cannot list products.', 'Close', { duration: 4000 });
+      return;
+    }
+    this.productsDrawerAdGroupId = adGroupId;
+    this.productsDrawerAdGroupName = ad.adGroupName ?? null;
+    this.productsDrawerCampaignName = ad.campaignName ?? null;
     this.productsForCampaign = [];
-    this.productsDateFrom = this.shoppingAdsFrom;
-    this.productsDateTo = this.shoppingAdsTo;
+    this.productsForCampaignMode = null;
+    this.productsDateFrom = null;
+    this.productsDateTo = null;
     this.loadingProducts = true;
     this.productsError = null;
-    this.googleAdsService.getShoppingAdProducts(campaignId, {
-      from: this.shoppingAdsFrom,
-      to: this.shoppingAdsTo,
-    }).subscribe({
-      next: (res) => {
-        if (res.success && res.data) {
-          this.productsForCampaign = res.data.products || [];
-          this.productsDateFrom = res.data.from;
-          this.productsDateTo = res.data.to;
-        }
-        this.loadingProducts = false;
-      },
-      error: (err) => {
-        this.productsError = err?.error?.error || err?.message || 'Failed to load products';
-        this.productsForCampaign = [];
-        this.loadingProducts = false;
-      },
-    });
+    this.googleAdsService
+      .getShoppingAdProducts({
+        adGroupId,
+        campaignId:
+          ad.campaignId != null && String(ad.campaignId).trim() !== '' ? String(ad.campaignId).trim() : undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.productsForCampaign = res.data.products || [];
+            this.productsForCampaignMode = res.data.mode ?? 'inventory';
+            if (res.data.mode === 'metrics') {
+              this.productsDateFrom = res.data.from ?? null;
+              this.productsDateTo = res.data.to ?? null;
+            } else {
+              this.productsDateFrom = null;
+              this.productsDateTo = null;
+            }
+          }
+          this.loadingProducts = false;
+        },
+        error: (err) => {
+          this.productsError = err?.error?.error || err?.message || 'Failed to load products';
+          this.productsForCampaign = [];
+          this.productsForCampaignMode = null;
+          this.loadingProducts = false;
+        },
+      });
   }
 
   closeProducts() {
-    this.productsForCampaignId = null;
-    this.productsForCampaignName = null;
+    this.productsDrawerAdGroupId = null;
+    this.productsDrawerAdGroupName = null;
+    this.productsDrawerCampaignName = null;
     this.productsForCampaign = [];
+    this.productsForCampaignMode = null;
     this.productsDateFrom = null;
     this.productsDateTo = null;
     this.productsError = null;
@@ -402,6 +575,47 @@ export class GoogleComponent implements OnInit {
       error: (err) => {
         this.createCampaignSubmitting = false;
         this.snackBar.open(err?.error?.error || err?.message || 'Failed to create campaign', 'Close', { duration: 4000 });
+      },
+    });
+  }
+
+  openEditCampaignBudget(c: GoogleCampaign) {
+    if (!c?.id) return;
+    this.showEditCampaignBudgetModal = true;
+    this.editBudgetCampaignId = c.id;
+    this.editBudgetCampaignName = c.name || c.id;
+    const cur = c.budgetAmountMicros != null ? Number(c.budgetAmountMicros) : NaN;
+    this.editBudgetAmountMicros = !Number.isNaN(cur) && cur >= 0 ? cur : 1_000_000;
+  }
+
+  closeEditCampaignBudgetModal() {
+    this.showEditCampaignBudgetModal = false;
+    this.editBudgetSubmitting = false;
+  }
+
+  submitEditCampaignBudget() {
+    const id = this.editBudgetCampaignId?.trim();
+    if (!id) return;
+    const micros = Number(this.editBudgetAmountMicros);
+    if (Number.isNaN(micros) || micros < 0) {
+      this.snackBar.open('Enter a valid budget (micros)', 'Close', { duration: 3000 });
+      return;
+    }
+    this.editBudgetSubmitting = true;
+    this.googleAdsService.updateCampaignBudget(id, micros).subscribe({
+      next: (res) => {
+        this.editBudgetSubmitting = false;
+        if (res.success) {
+          this.snackBar.open('Budget updated', 'Close', { duration: 3000 });
+          this.closeEditCampaignBudgetModal();
+          this.loadCampaigns();
+        } else {
+          this.snackBar.open((res as any).error || 'Failed to update budget', 'Close', { duration: 4000 });
+        }
+      },
+      error: (err) => {
+        this.editBudgetSubmitting = false;
+        this.snackBar.open(err?.error?.error || err?.message || 'Failed to update budget', 'Close', { duration: 4000 });
       },
     });
   }
@@ -766,7 +980,7 @@ export class GoogleComponent implements OnInit {
         if (res.success) {
           this.snackBar.open('Shopping ad created', 'Close', { duration: 3000 });
           this.closeCreateShoppingAdModal();
-          this.loadShoppingAds();
+          this.loadShoppingAds(true);
         } else {
           this.snackBar.open((res as any).error || 'Failed to create Shopping ad', 'Close', { duration: 4000 });
         }
@@ -847,7 +1061,7 @@ export class GoogleComponent implements OnInit {
   }
 
   /** Cost in currency units (micros to units). Accepts number or string (from API). */
-  costFromMicros(micros: number | string | undefined): string {
+  costFromMicros(micros: number | string | null | undefined): string {
     if (micros == null) return '0';
     return (Number(micros) / 1_000_000).toFixed(2);
   }

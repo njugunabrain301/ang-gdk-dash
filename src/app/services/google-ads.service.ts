@@ -89,22 +89,42 @@ export class GoogleAdsService {
     return this.httpClient.get<ApiResponse<AdGroupsResponse>>(`/google/ad-groups?${p.toString()}`);
   }
 
-  /** Shopping ads list from GET /google/shopping-ads (optional from/to for metrics date range) */
-  getShoppingAds(params?: { limit?: number; pageToken?: string; from?: string; to?: string }): Observable<ApiResponse<ShoppingAdsResponse>> {
+  /**
+   * GET /google/shopping-ads
+   * mode=metrics: date-segmented performance (from/to); mode=inventory: all Shopping product ads (from/to ignored).
+   * Server uses a large Google page size; UI slices with `shoppingAdsPageSize` in the component.
+   */
+  getShoppingAds(params?: {
+    mode?: 'metrics' | 'inventory';
+    pageToken?: string;
+    from?: string;
+    to?: string;
+  }): Observable<ApiResponse<ShoppingAdsResponse>> {
     const p = new URLSearchParams();
-    if (params?.limit != null) p.set('limit', String(params.limit));
-    if (params?.pageToken) p.set('pageToken', params.pageToken);
-    if (params?.from) p.set('from', params.from);
-    if (params?.to) p.set('to', params.to);
-    const q = p.toString();
-    return this.httpClient.get<ApiResponse<ShoppingAdsResponse>>(`/google/shopping-ads${q ? `?${q}` : ''}`);
+    const mode = params?.mode ?? 'metrics';
+    p.set('mode', mode);
+    if (params?.pageToken != null && String(params.pageToken).length > 0) {
+      p.set('pageToken', String(params.pageToken));
+    }
+    if (mode === 'metrics') {
+      if (params?.from) p.set('from', params.from);
+      if (params?.to) p.set('to', params.to);
+    }
+    return this.httpClient.get<ApiResponse<ShoppingAdsResponse>>(`/google/shopping-ads?${p.toString()}`);
   }
 
-  /** Product-level stats for a campaign from GET /google/shopping-ads/products */
-  getShoppingAdProducts(campaignId: string, params?: { from?: string; to?: string }): Observable<ApiResponse<ShoppingAdProductsResponse>> {
-    const p = new URLSearchParams({ campaignId });
-    if (params?.from) p.set('from', params.from);
-    if (params?.to) p.set('to', params.to);
+  /** GET /google/shopping-ads/products — pass `adGroupId` to scope listing groups / performance to that ad group. */
+  getShoppingAdProducts(params: {
+    adGroupId: string;
+    campaignId?: string;
+    from?: string;
+    to?: string;
+  }): Observable<ApiResponse<ShoppingAdProductsResponse>> {
+    const p = new URLSearchParams();
+    p.set('adGroupId', params.adGroupId);
+    if (params.campaignId) p.set('campaignId', params.campaignId);
+    if (params.from) p.set('from', params.from);
+    if (params.to) p.set('to', params.to);
     return this.httpClient.get<ApiResponse<ShoppingAdProductsResponse>>(`/google/shopping-ads/products?${p.toString()}`);
   }
 
@@ -128,6 +148,16 @@ export class GoogleAdsService {
 
   enableCampaign(campaignId: string): Observable<ApiResponse<{ campaignId: string; status: string }>> {
     return this.httpClient.post<ApiResponse<{ campaignId: string; status: string }>>(`/google/campaigns/${campaignId}/enable`, {});
+  }
+
+  updateCampaignBudget(
+    campaignId: string,
+    amountMicros: number,
+  ): Observable<ApiResponse<{ campaignId: string; budgetResourceName?: string; amountMicros: number }>> {
+    return this.httpClient.post<ApiResponse<{ campaignId: string; budgetResourceName?: string; amountMicros: number }>>(
+      `/google/campaigns/${campaignId}/budget`,
+      { amountMicros },
+    );
   }
 
   createAdGroup(body: { campaignId: string; name: string; productItemIds?: string[]; cpcBidMicros?: number }): Observable<ApiResponse<{ adGroupId: string; resourceName?: string }>> {
@@ -202,36 +232,53 @@ export interface GoogleShoppingAd {
   status: string;
   type?: string;
   adGroupId?: string;
+  adGroupName?: string;
   campaignId?: string;
   campaignName?: string;
+  /**
+   * Metrics mode only: earliest day in the selected date range with reporting data for this ad.
+   * Not the ad’s creation date (Google Ads does not expose that on ad_group_ad).
+   */
+  firstActivityDate?: string;
   clicks?: number;
   costMicros?: number;
 }
 
 export interface ShoppingAdsResponse {
+  mode: 'metrics' | 'inventory';
   data: GoogleShoppingAd[];
-  page: number;
-  limit: number;
-  total: number;
+  /** @deprecated Ignored by API; use client page size only. */
+  limit?: number;
+  nextPageToken?: string;
+  /** metrics mode only */
   from?: string;
   to?: string;
-  nextPageToken?: string;
+  /** legacy fields (optional) */
+  page?: number;
+  total?: number;
 }
 
 export interface ShoppingAdProduct {
   productItemId: string | null;
   productTitle: string;
-  impressions: number;
-  clicks: number;
-  costMicros: number;
-  conversions: number;
-  conversionsValue: number;
+  /** When productItemId matches GProduct._id for this business (e.g. Merchant offer id). */
+  gProductId?: string | null;
+  gProductName?: string | null;
+  /** Present when `mode === 'metrics'`; omitted or null for inventory listing */
+  impressions?: number | null;
+  clicks?: number | null;
+  costMicros?: number | null;
+  conversions?: number | null;
+  conversionsValue?: number | null;
 }
 
 export interface ShoppingAdProductsResponse {
-  campaignId: string;
-  from: string;
-  to: string;
+  campaignId?: string | null;
+  adGroupId?: string | null;
+  /** inventory = listing-group products for the campaign (no date). metrics = performance view for from/to. */
+  mode?: 'inventory' | 'metrics';
+  from?: string;
+  to?: string;
   products: ShoppingAdProduct[];
 }
 
