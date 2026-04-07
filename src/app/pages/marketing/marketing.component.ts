@@ -74,6 +74,19 @@ Chart.register(...registerables);
 })
 export class MarketingComponent implements OnInit {
   selectedChannel: 'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google' = 'overview';
+
+  /** Nav row title matching the selected channel */
+  get selectedChannelTitle(): string {
+    const labels: Record<typeof this.selectedChannel, string> = {
+      overview: 'Overview',
+      meta: 'Meta',
+      twitter: 'Twitter',
+      tiktok: 'TikTok',
+      youtube: 'YouTube',
+      google: 'Google',
+    };
+    return labels[this.selectedChannel] ?? this.selectedChannel;
+  }
   selectedMetaSection: 'posts' | 'ads' = 'posts';
   selectedTiktokSection: 'posts' | 'campaigns' | 'adgroups' | 'ads' = 'ads';
   

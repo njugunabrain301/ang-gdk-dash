@@ -13,27 +13,24 @@
 
     <div class="flex-1 overflow-auto bg-gray-50">
       <!-- Minimal Navigation Row -->
-      <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center">
-        <button
-          mat-button
-          (click)="onChannelChange('overview')"
-          [class.text-blue-600]="selectedChannel === 'overview'"
-          [class.bg-blue-50]="selectedChannel === 'overview'"
-          [class.font-semibold]="selectedChannel === 'overview'"
-          class="flex items-center px-4 py-2 rounded-lg transition-all duration-200 hover:bg-gray-50"
-          style="min-width: auto;"
-        >
-          <mat-icon class="mr-2" style="font-size: 20px; width: 20px; height: 20px;">bar_chart</mat-icon>
-          <span class="text-sm">Overview</span>
-        </button>
-        
-        <mat-form-field appearance="outline" class="ml-auto" style="margin: 0; width: 192px;">
+      <div class="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center gap-4">
+        <div class="flex items-center min-w-0">
+          <mat-icon class="mr-2 text-blue-600 flex-shrink-0" style="font-size: 24px; width: 24px; height: 24px;">
+            {{ selectedChannel === 'overview' ? 'bar_chart' : 'campaign' }}
+          </mat-icon>
+          <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate m-0">
+            {{ selectedChannelTitle }}
+          </h3>
+        </div>
+
+        <mat-form-field appearance="outline" class="flex-shrink-0 ml-auto" style="margin: 0; width: 192px;">
           <mat-label class="text-sm text-gray-600">Social Media Channel</mat-label>
-          <mat-select [(ngModel)]="selectedChannel" (selectionChange)="onChannelChange(selectedChannel)" class="text-sm">
+          <mat-select [(ngModel)]="selectedChannel" (selectionChange)="onChannelChange($event.value)" class="text-sm">
+            <mat-option value="overview" class="text-sm">Overview</mat-option>
             <mat-option value="meta" class="text-sm">Meta</mat-option>
-            <mat-option value="twitter" class="text-sm">Twitter</mat-option>
+            <!-- <mat-option value="twitter" class="text-sm">Twitter</mat-option> -->
             <mat-option value="tiktok" class="text-sm">TikTok</mat-option>
-            <mat-option value="youtube" class="text-sm">YouTube</mat-option>
+            <!-- <mat-option value="youtube" class="text-sm">YouTube</mat-option> -->
             <mat-option value="google" class="text-sm">Google</mat-option>
           </mat-select>
         </mat-form-field>
@@ -44,7 +41,7 @@
         <!-- Overview Section -->
         <div *ngIf="selectedChannel === 'overview'" class="p-8">
           <div class="max-w-5xl mx-auto">
-            <div class="flex justify-end mb-4">
+            <div class="flex justify-start mb-4">
               <mat-form-field appearance="outline" style="width: 160px; margin: 0;">
                 <mat-label>Date Range</mat-label>
                 <mat-select [(ngModel)]="selectedOverviewDatePreset" (selectionChange)="onOverviewDatePresetChange()">
