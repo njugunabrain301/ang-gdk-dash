@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -13,12 +13,26 @@ export interface Status {
   // Add other status properties as needed
 }
 
+export interface InvoicesPagination {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface InvoiceSummary {
+  totalCount: number;
+  hasPendingActivationInvoice: boolean;
+}
+
 export interface BillingResponse {
   lastPayment: LastPayment;
   subscription: string;
   invoices: any[];
   package: string;
   status: Status;
+  invoicesPagination?: InvoicesPagination | null;
+  invoiceSummary?: InvoiceSummary;
 }
 
 export interface ApiResponse<T> {
@@ -44,8 +58,24 @@ export interface Invoice {
 export class BillingService {
   private httpClient = inject(HttpClient);
 
-  getInvoices(): Observable<ApiResponse<BillingResponse>> {
-    return this.httpClient.get<ApiResponse<BillingResponse>>('/invoices');
+  /**
+   * @param page 1-based page index (omit with limit for full list — legacy)
+   * @param limit page size; when both page and limit are sent, API returns a slice + invoicesPagination
+   */
+  getInvoices(
+    page?: number,
+    limit?: number
+  ): Observable<ApiResponse<BillingResponse>> {
+    let params = new HttpParams();
+    if (page != null) {
+      params = params.set('page', String(page));
+    }
+    if (limit != null) {
+      params = params.set('limit', String(limit));
+    }
+    return this.httpClient.get<ApiResponse<BillingResponse>>('/invoices', {
+      params,
+    });
   }
 
   payInvoice(data: {

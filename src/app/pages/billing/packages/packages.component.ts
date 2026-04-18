@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,14 +27,16 @@ import { firstValueFrom } from 'rxjs';
   templateUrl: './packages.component.html',
   styleUrls: ['./packages.component.scss'],
 })
-export class PackagesComponent implements OnInit {
+export class PackagesComponent implements OnInit, OnChanges {
   @Input() profile: any;
   @Input() invoices: any[] = [];
+  /** From GET /invoices invoiceSummary — required when invoices list is paginated */
+  @Input() hasPendingActivationInvoice = false;
   @Input() lastPayment: any;
   @Input() currentPackage: string = '';
   @Input() status: any;
 
-  @Output() invoicesChange = new EventEmitter<any[]>();
+  @Output() invoicesChange = new EventEmitter<void>();
   @Output() lastPaymentChange = new EventEmitter<any>();
   @Output() subscriptionChange = new EventEmitter<string>();
   @Output() packageChange = new EventEmitter<string>();
@@ -42,14 +52,17 @@ export class PackagesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.checkPendingInvoices();
+    this.syncPendingFromInput();
   }
 
-  checkPendingInvoices(): void {
-    this.pending = this.invoices.some(
-      (inv) =>
-        inv.purpose === 'ACTIVATE - Business' && inv.status === 'Processing'
-    );
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['hasPendingActivationInvoice']) {
+      this.syncPendingFromInput();
+    }
+  }
+
+  private syncPendingFromInput(): void {
+    this.pending = this.hasPendingActivationInvoice;
   }
 
   async generateInvoice(amount: number, purpose: string): Promise<boolean> {
@@ -107,7 +120,7 @@ export class PackagesComponent implements OnInit {
           this.pending = true;
         }
         this.lastPaymentChange.emit(result.lastPayment);
-        this.invoicesChange.emit(result.invoices.reverse());
+        this.invoicesChange.emit();
       }
     });
   }
@@ -119,7 +132,7 @@ export class PackagesComponent implements OnInit {
           this.subscriptionChange.emit(response.data.subscription);
           this.packageChange.emit(response.data.package);
           this.lastPaymentChange.emit(response.data.lastPayment);
-          this.invoicesChange.emit(response.data.invoices.reverse());
+          this.invoicesChange.emit();
         }
       },
     });
@@ -132,7 +145,7 @@ export class PackagesComponent implements OnInit {
           this.subscriptionChange.emit(response.data.subscription);
           this.packageChange.emit(response.data.package);
           this.lastPaymentChange.emit(response.data.lastPayment);
-          this.invoicesChange.emit(response.data.invoices.reverse());
+          this.invoicesChange.emit();
         }
       },
     });

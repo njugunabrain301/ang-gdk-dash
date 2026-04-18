@@ -34,6 +34,7 @@ import {
   TiktokImageInfo,
   TiktokVideoInfo,
   TiktokMetrics,
+  FacebookStatusResponse,
 } from '../../services/marketing.service';
 import { ProductsService } from '../../services/products.service';
 import { ProductService } from '../../services/product.service';
@@ -41,6 +42,8 @@ import { ScheduleService, ScheduleData } from '../../services/schedule.service';
 import { GoogleComponent } from '../../components/marketing/google/google.component';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, registerables, ChartData, ChartOptions } from 'chart.js';
+import { ActivatedRoute, ParamMap } from '@angular/router';
+import { skip } from 'rxjs/operators';
 
 Chart.register(...registerables);
 
@@ -75,6 +78,10 @@ Chart.register(...registerables);
 export class MarketingComponent implements OnInit {
   selectedChannel: 'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google' = 'overview';
 
+  private readonly allowedMarketingChannels: Array<
+    'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google'
+  > = ['overview', 'meta', 'twitter', 'tiktok', 'youtube', 'google'];
+
   /** Nav row title matching the selected channel */
   get selectedChannelTitle(): string {
     const labels: Record<typeof this.selectedChannel, string> = {
@@ -89,7 +96,16 @@ export class MarketingComponent implements OnInit {
   }
   selectedMetaSection: 'posts' | 'ads' = 'posts';
   selectedTiktokSection: 'posts' | 'campaigns' | 'adgroups' | 'ads' = 'ads';
-  
+
+  /** Meta (Facebook) OAuth connection + asset pickers */
+  isLoadingFacebookStatus = false;
+  facebookStatus: FacebookStatusResponse = {
+    connected: false,
+    pages: [],
+    adAccounts: [],
+    pixels: [],
+  };
+
   // Priority items data (using facebook as default)
   priorityItems: PriorityItem[] = [];
   isLoadingPriorityItems = false;
@@ -611,39 +627,90 @@ export class MarketingComponent implements OnInit {
     private scheduleService: ScheduleService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private route: ActivatedRoute
   ) {}
 
+  /**
+   * e.g. marketing?channel=google&status=connected — selects that channel tab so child UIs (e.g. Google OAuth) can run.
+   * TikTok OAuth return still strips query via replaceState here; Google clears in app-google.
+   */
+  private syncChannelFromQueryParamMap(q: ParamMap): boolean {
+    const channel = q.get('channel');
+    if (!channel) {
+      return false;
+    }
+    if (
+      !(this.allowedMarketingChannels as readonly string[]).includes(channel)
+    ) {
+      return false;
+    }
+    const next = channel as MarketingComponent['selectedChannel'];
+    if (this.selectedChannel === next) {
+      return false;
+    }
+    this.selectedChannel = next;
+    return true;
+  }
+
+  private handleTiktokOAuthReturn(q: ParamMap): void {
+    if (q.get('channel') !== 'tiktok') {
+      return;
+    }
+    const status = q.get('status');
+    if (!status) {
+      return;
+    }
+    if (status === 'error') {
+      this.snackBar.open(
+        q.get('message') || 'TikTok connection failed',
+        'Close',
+        { duration: 5000 }
+      );
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  private handleMetaOAuthReturn(q: ParamMap): void {
+    if (q.get('channel') !== 'meta') {
+      return;
+    }
+    const status = q.get('status');
+    if (!status) {
+      return;
+    }
+    if (status === 'connected') {
+      this.snackBar.open('Facebook / Meta connected successfully', 'Close', {
+        duration: 5000,
+      });
+    } else if (status === 'error') {
+      this.snackBar.open(
+        q.get('message') || 'Meta connection failed',
+        'Close',
+        { duration: 5000 }
+      );
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
   ngOnInit() {
+    this.syncChannelFromQueryParamMap(this.route.snapshot.queryParamMap);
+    this.handleTiktokOAuthReturn(this.route.snapshot.queryParamMap);
+    this.handleMetaOAuthReturn(this.route.snapshot.queryParamMap);
+
     this.loadProducts();
     this.loadPriorityItems();
     this.loadSchedule();
-    // Check query params for OAuth callback (e.g. ?channel=tiktok&status=connected)
-    const params = new URLSearchParams(window.location.search);
-    const channel = params.get('channel');
-    const status = params.get('status');
-    if (channel === 'tiktok' && status === 'connected') {
-      this.selectedChannel = 'tiktok';
-      this.loadTiktokStatus();
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (channel === 'tiktok' && status === 'error') {
-      this.selectedChannel = 'tiktok';
-      const msg = params.get('message') || 'TikTok connection failed';
-      this.snackBar.open(msg, 'Close', { duration: 5000 });
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-    // Load overview stats if on overview channel
-    if (this.selectedChannel === 'overview') {
-      this.loadOverviewStats();
-      this.loadTiktokStatus();
-    }
-    // Load ads when Ads section is selected and Meta channel is active
-    if (this.selectedChannel === 'meta' && this.selectedMetaSection === 'ads') {
-      this.loadAds();
-    }
-    if (this.selectedChannel === 'tiktok') {
-      this.loadTiktokStatus();
-    }
+
+    this.route.queryParamMap.pipe(skip(1)).subscribe((q) => {
+      if (this.syncChannelFromQueryParamMap(q)) {
+        this.onChannelChange(this.selectedChannel);
+      }
+      this.handleTiktokOAuthReturn(q);
+      this.handleMetaOAuthReturn(q);
+    });
+
+    this.onChannelChange(this.selectedChannel);
   }
 
   onChannelChange(channel: 'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google') {
@@ -655,13 +722,135 @@ export class MarketingComponent implements OnInit {
       } else {
         this.loadTiktokStatus();
       }
-    } else if (channel === 'meta' && this.selectedMetaSection === 'posts') {
-      this.loadPriorityItems();
-    } else if (channel === 'meta' && this.selectedMetaSection === 'ads') {
-      this.loadAds();
+    } else if (channel === 'meta') {
+      this.loadFacebookStatus();
+      if (this.selectedMetaSection === 'posts') {
+        this.loadPriorityItems();
+      } else if (this.selectedMetaSection === 'ads') {
+        this.loadAds();
+      }
     } else if (channel === 'tiktok') {
       this.loadTiktokStatus();
     }
+  }
+
+  loadFacebookStatus(): void {
+    this.isLoadingFacebookStatus = true;
+    this.marketingService.getFacebookStatus().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.facebookStatus = res.data;
+        }
+        this.isLoadingFacebookStatus = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingFacebookStatus = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  connectFacebook(): void {
+    this.marketingService.getFacebookOAuthStartUrl().subscribe({
+      next: (res) => {
+        if (res.success && res.data?.redirectUrl) {
+          window.location.href = res.data.redirectUrl;
+        } else {
+          this.snackBar.open('Could not get Facebook connect URL', 'Close', {
+            duration: 3000,
+          });
+        }
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err.error?.error || 'Failed to start Facebook connection',
+          'Close',
+          { duration: 3000 }
+        );
+      },
+    });
+  }
+
+  disconnectFacebook(): void {
+    if (
+      !confirm(
+        'Disconnect Facebook / Meta? Stored tokens and selected Page, ad account, and pixel will be cleared.'
+      )
+    ) {
+      return;
+    }
+    this.marketingService.disconnectFacebook().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.snackBar.open('Facebook / Meta disconnected', 'Close', {
+            duration: 3000,
+          });
+          this.facebookStatus = {
+            connected: false,
+            pages: [],
+            adAccounts: [],
+            pixels: [],
+          };
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err.error?.error || 'Failed to disconnect',
+          'Close',
+          { duration: 3000 }
+        );
+      },
+    });
+  }
+
+  onFacebookPageSelected(pageId: string): void {
+    if (!pageId) return;
+    this.marketingService.selectFacebookPage(pageId).subscribe({
+      next: (res) => {
+        if (res.success) this.loadFacebookStatus();
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err.error?.error || 'Could not update Page',
+          'Close',
+          { duration: 4000 }
+        );
+      },
+    });
+  }
+
+  onFacebookAdAccountSelected(adAccountId: string): void {
+    if (!adAccountId) return;
+    this.marketingService.selectFacebookAdAccount(adAccountId).subscribe({
+      next: (res) => {
+        if (res.success) this.loadFacebookStatus();
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err.error?.error || 'Could not update ad account',
+          'Close',
+          { duration: 4000 }
+        );
+      },
+    });
+  }
+
+  onFacebookPixelSelected(pixelId: string): void {
+    if (!pixelId) return;
+    this.marketingService.selectFacebookPixel(pixelId).subscribe({
+      next: (res) => {
+        if (res.success) this.loadFacebookStatus();
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err.error?.error || 'Could not update pixel',
+          'Close',
+          { duration: 4000 }
+        );
+      },
+    });
   }
 
   onTiktokSectionChange(section: 'posts' | 'campaigns' | 'adgroups' | 'ads') {
@@ -2417,6 +2606,8 @@ export class MarketingComponent implements OnInit {
     this.selectedMetaSection = section;
     if (section === 'ads') {
       this.loadAds();
+    } else if (section === 'posts') {
+      this.loadPriorityItems();
     }
   }
 

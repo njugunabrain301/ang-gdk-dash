@@ -345,6 +345,65 @@ export class MarketingService {
     if (advertiserId) q.append('advertiser_id', advertiserId);
     return this.httpClient.get<ApiResponse<{ list: TiktokVideoInfo[] }>>(`/tiktok/assets/video/info?${q.toString()}`);
   }
+
+  // --- Meta (Facebook) OAuth ---
+  getFacebookOAuthStartUrl(): Observable<ApiResponse<{ redirectUrl: string }>> {
+    return this.httpClient.get<ApiResponse<{ redirectUrl: string }>>('/facebook/oauth/start-url');
+  }
+
+  getFacebookStatus(): Observable<ApiResponse<FacebookStatusResponse>> {
+    return this.httpClient.get<ApiResponse<FacebookStatusResponse>>('/facebook/status');
+  }
+
+  disconnectFacebook(): Observable<ApiResponse<{ disconnected: boolean }>> {
+    return this.httpClient.post<ApiResponse<{ disconnected: boolean }>>('/facebook/disconnect', {});
+  }
+
+  selectFacebookPage(pageId: string): Observable<ApiResponse<unknown>> {
+    return this.httpClient.post<ApiResponse<unknown>>('/facebook/select-page', { pageId });
+  }
+
+  selectFacebookAdAccount(adAccountId: string): Observable<ApiResponse<unknown>> {
+    return this.httpClient.post<ApiResponse<unknown>>('/facebook/select-ad-account', { adAccountId });
+  }
+
+  selectFacebookPixel(pixelId: string): Observable<ApiResponse<unknown>> {
+    return this.httpClient.post<ApiResponse<unknown>>('/facebook/select-pixel', { pixelId });
+  }
+}
+
+export interface FacebookPageOption {
+  id: string;
+  name: string;
+  instagramUsername: string | null;
+  instagramName: string | null;
+}
+
+export interface FacebookAdAccountOption {
+  id: string;
+  name: string;
+  accountId: string;
+}
+
+export interface FacebookPixelOption {
+  id: string;
+  name: string;
+}
+
+export interface FacebookStatusResponse {
+  connected: boolean;
+  metaUserAccessTokenExpiresAt?: string | null;
+  facebookPageId?: string | null;
+  facebookPageName?: string | null;
+  instagramAccountId?: string | null;
+  instagramUsername?: string | null;
+  facebookAdAccountId?: string | null;
+  facebookAdAccountName?: string | null;
+  facebookPixelId?: string | null;
+  facebookPixelName?: string | null;
+  pages: FacebookPageOption[];
+  adAccounts: FacebookAdAccountOption[];
+  pixels: FacebookPixelOption[];
 }
 
 export interface TiktokStatus {

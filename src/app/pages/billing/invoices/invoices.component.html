@@ -69,10 +69,12 @@
     </table>
 
     <mat-paginator
+      [length]="pagination?.total ?? invoices.length"
+      [pageIndex]="pagination ? pagination.page - 1 : 0"
+      [pageSize]="pagination?.pageSize ?? 10"
       [pageSizeOptions]="pageSizeOptions"
-      [pageSize]="pageSize"
+      [showFirstLastButtons]="true"
       (page)="handlePageEvent($event)"
-      showFirstLastButtons
     >
     </mat-paginator>
   </div>

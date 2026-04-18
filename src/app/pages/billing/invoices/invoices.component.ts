@@ -7,6 +7,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import {
   BillingService,
   Invoice,
+  InvoicesPagination,
   LastPayment,
 } from '../../../services/billing.service';
 import { PaymentDialogComponent } from '../packages/payment-dialog.component';
@@ -27,8 +28,11 @@ import { PaymentDialogComponent } from '../packages/payment-dialog.component';
 })
 export class InvoicesComponent implements OnInit {
   @Input() invoices: Invoice[] = [];
+  /** Server pagination (from GET /invoices?page=&limit=). When set, drives mat-paginator length/index. */
+  @Input() pagination: InvoicesPagination | null = null;
   @Input() profile: any;
-  @Output() invoicesChange = new EventEmitter<Invoice[]>();
+  @Output() invoicesChange = new EventEmitter<void>();
+  @Output() pageChange = new EventEmitter<PageEvent>();
   @Output() lastPaymentChange = new EventEmitter<LastPayment>();
 
   displayedColumns: string[] = [
@@ -40,7 +44,6 @@ export class InvoicesComponent implements OnInit {
     'datePaid',
   ];
 
-  pageSize = 5;
   pageSizeOptions = [5, 10, 25];
   selectedInvoiceDescription = '';
   showDescriptionModal = false;
@@ -58,7 +61,7 @@ export class InvoicesComponent implements OnInit {
   }
 
   handlePageEvent(event: PageEvent): void {
-    this.pageSize = event.pageSize;
+    this.pageChange.emit(event);
   }
 
   showDescription(description: string): void {
@@ -86,7 +89,7 @@ export class InvoicesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.lastPaymentChange.emit(result.lastPayment);
-        this.invoicesChange.emit(result.invoices.reverse());
+        this.invoicesChange.emit();
       }
     });
   }

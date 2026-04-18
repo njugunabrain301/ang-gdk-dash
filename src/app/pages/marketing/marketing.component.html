@@ -219,6 +219,102 @@
 
         <!-- Meta Section -->
         <div *ngIf="selectedChannel === 'meta'" class="p-8">
+          <!-- Facebook / Meta OAuth & assets -->
+          <div class="mb-6 p-6 bg-white rounded-xl border border-gray-200 max-w-6xl mx-auto">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 class="text-lg font-semibold text-gray-800 m-0">Facebook &amp; Instagram</h3>
+              <div class="flex items-center gap-2">
+                <button
+                  *ngIf="!facebookStatus.connected"
+                  mat-raised-button
+                  color="primary"
+                  (click)="connectFacebook()"
+                  [disabled]="isLoadingFacebookStatus"
+                >
+                  <mat-icon>link</mat-icon>
+                  Connect Facebook
+                </button>
+                <button
+                  *ngIf="facebookStatus.connected"
+                  mat-button
+                  color="warn"
+                  (click)="disconnectFacebook()"
+                  class="text-sm"
+                >
+                  <mat-icon>link_off</mat-icon>
+                  Disconnect
+                </button>
+              </div>
+            </div>
+            <div *ngIf="isLoadingFacebookStatus" class="flex justify-center py-4">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+            <div *ngIf="!isLoadingFacebookStatus && facebookStatus.connected" class="space-y-4">
+              <p class="text-sm text-gray-600 m-0">
+                <span *ngIf="facebookStatus.metaUserAccessTokenExpiresAt">
+                  User token expires: {{ facebookStatus.metaUserAccessTokenExpiresAt | date:'medium' }}
+                </span>
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <mat-form-field appearance="outline" class="w-full" style="margin: 0;">
+                  <mat-label>Facebook Page</mat-label>
+                  <mat-select
+                    [value]="facebookStatus.facebookPageId || ''"
+                    (selectionChange)="onFacebookPageSelected($event.value)"
+                  >
+                    <mat-option *ngFor="let p of facebookStatus.pages" [value]="p.id">
+                      {{ p.name }}
+                      <span *ngIf="p.instagramUsername" class="text-gray-500 text-xs">
+                        — IG &#64;{{ p.instagramUsername }}
+                      </span>
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <div class="text-sm text-gray-700 flex items-center">
+                  <mat-icon class="text-pink-600 mr-1" style="font-size: 20px; width: 20px; height: 20px;">photo_camera</mat-icon>
+                  <span *ngIf="facebookStatus.instagramUsername || facebookStatus.instagramAccountId">
+                    Instagram:
+                    <strong *ngIf="facebookStatus.instagramUsername">&#64;{{ facebookStatus.instagramUsername }}</strong>
+                    <span *ngIf="!facebookStatus.instagramUsername && facebookStatus.instagramAccountId">linked (ID {{ facebookStatus.instagramAccountId }})</span>
+                  </span>
+                  <span *ngIf="!facebookStatus.instagramUsername && !facebookStatus.instagramAccountId" class="text-gray-500">
+                    No Instagram Business account linked to this Page
+                  </span>
+                </div>
+                <mat-form-field appearance="outline" class="w-full" style="margin: 0;">
+                  <mat-label>Ad account</mat-label>
+                  <mat-select
+                    [value]="facebookStatus.facebookAdAccountId || ''"
+                    (selectionChange)="onFacebookAdAccountSelected($event.value)"
+                    [disabled]="!facebookStatus.adAccounts?.length"
+                  >
+                    <mat-option *ngFor="let a of facebookStatus.adAccounts" [value]="a.accountId">
+                      {{ a.name }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="w-full" style="margin: 0;">
+                  <mat-label>Pixel</mat-label>
+                  <mat-select
+                    [value]="facebookStatus.facebookPixelId || ''"
+                    (selectionChange)="onFacebookPixelSelected($event.value)"
+                    [disabled]="!facebookStatus.pixels?.length"
+                  >
+                    <mat-option *ngFor="let px of facebookStatus.pixels" [value]="px.id">
+                      {{ px.name }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <p *ngIf="facebookStatus.connected && !facebookStatus.pixels?.length" class="text-amber-700 text-sm m-0">
+                No pixels on this ad account. Create one in Meta Events Manager or choose another ad account.
+              </p>
+            </div>
+            <div *ngIf="!isLoadingFacebookStatus && !facebookStatus.connected" class="text-sm text-gray-600">
+              Connect your Facebook account to load Page access, ad accounts, and pixels automatically.
+            </div>
+          </div>
+
           <div class="mb-6 flex space-x-1 border-b border-gray-200">
             <button
               (click)="onMetaSectionChange('posts')"
@@ -841,6 +937,7 @@
                   [class.border-blue-600]="selectedTiktokSection === 'posts'"
                   [class.font-semibold]="selectedTiktokSection === 'posts'"
                   class="px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors border-b-2 border-transparent -mb-px"
+                  *ngIf="false"
                 >
                   Posts
                   <span class="ml-1 text-xs font-normal text-gray-400">(coming soon)</span>

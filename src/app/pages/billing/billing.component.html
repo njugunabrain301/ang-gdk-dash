@@ -53,10 +53,11 @@
           *ngSwitchCase="1"
           [profile]="profile"
           [invoices]="invoices"
+          [hasPendingActivationInvoice]="hasPendingActivationInvoice"
           [lastPayment]="lastPayment"
           [currentPackage]="currentPackage"
           [status]="status"
-          (invoicesChange)="invoices = $event"
+          (invoicesChange)="onBillingInvoicesUpdated()"
           (lastPaymentChange)="lastPayment = $event"
           (subscriptionChange)="subscription = $event"
           (packageChange)="currentPackage = $event"
@@ -68,7 +69,9 @@
         <app-invoices
           *ngSwitchCase="3"
           [invoices]="invoices"
-          (invoicesChange)="invoices = $event"
+          [pagination]="invoicesPagination"
+          (pageChange)="onInvoicesPageChange($event)"
+          (invoicesChange)="onBillingInvoicesUpdated()"
           (lastPaymentChange)="lastPayment = $event"
         >
         </app-invoices>

@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
+import { PageEvent } from '@angular/material/paginator';
 import {
   BillingService,
+  InvoicesPagination,
   LastPayment,
   Status,
 } from '../../services/billing.service';
@@ -35,6 +37,10 @@ export class BillingComponent implements OnInit {
   subscription: string = '';
   currentPackage: string = '';
   invoices: any = [];
+  invoicesPagination: InvoicesPagination | null = null;
+  hasPendingActivationInvoice = false;
+  private invoicesPage = 1;
+  private invoicesPageSize = 10;
   status: Status = { subscription: '' };
   validUntil: string = '';
   daysRemaining: number = 10;
@@ -53,16 +59,21 @@ export class BillingComponent implements OnInit {
         this.activeTab = section === 'invoices' ? 3 : 1;
       });
 
-    this.loadInvoices();
+    this.loadInvoices(1, this.invoicesPageSize);
   }
 
-  loadInvoices(): void {
-    this.billingService.getInvoices().subscribe({
+  loadInvoices(page = this.invoicesPage, pageSize = this.invoicesPageSize): void {
+    this.invoicesPage = page;
+    this.invoicesPageSize = pageSize;
+    this.billingService.getInvoices(page, pageSize).subscribe({
       next: (response) => {
         if (response.success) {
           this.lastPayment = response.data.lastPayment;
           this.subscription = response.data.subscription;
-          this.invoices = response.data.invoices.reverse();
+          this.invoices = response.data.invoices;
+          this.invoicesPagination = response.data.invoicesPagination ?? null;
+          this.hasPendingActivationInvoice =
+            response.data.invoiceSummary?.hasPendingActivationInvoice ?? false;
           this.currentPackage = response.data.package;
           this.status = response.data.status;
           this.calculateValidUntil();
@@ -70,6 +81,15 @@ export class BillingComponent implements OnInit {
       },
       error: (error) => console.error('Error loading invoices:', error),
     });
+  }
+
+  onInvoicesPageChange(event: PageEvent): void {
+    this.loadInvoices(event.pageIndex + 1, event.pageSize);
+  }
+
+  /** Reload invoices after pay / generate / activate — keeps current page */
+  onBillingInvoicesUpdated(): void {
+    this.loadInvoices(this.invoicesPage, this.invoicesPageSize);
   }
 
   calculateValidUntil(): void {
