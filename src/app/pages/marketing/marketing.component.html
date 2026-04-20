@@ -1583,10 +1583,13 @@
               color="accent"
               [disabled]="!createAdSelectedProductId || isGenerateAdLoading || isLoadingProductForAd || (createAdLandingPages.length > 0 && !createAdSelectedLandingPageName)"
               (click)="generateAdCopy()"
+              style="display: flex;"
             >
-              <mat-spinner *ngIf="isGenerateAdLoading" diameter="20" class="inline-block mr-2"></mat-spinner>
+            <span style="display: flex">
+              <mat-spinner *ngIf="isGenerateAdLoading" diameter="20" class="mr-2"></mat-spinner>
               <mat-icon *ngIf="!isGenerateAdLoading">auto_awesome</mat-icon>
               {{ isGenerateAdLoading ? 'Generating…' : 'Generate ad copy' }}
+            </span>
             </button>
             <span class="ml-2 text-sm text-gray-500" *ngIf="createAdLandingPages.length === 0 && createAdSelectedProductId && !isLoadingProductForAd">
               No landing pages — first page will be used
