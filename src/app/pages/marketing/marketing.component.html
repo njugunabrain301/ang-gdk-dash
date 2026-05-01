@@ -675,6 +675,15 @@
                         <mat-icon>add</mat-icon>
                         Create New Ad Campaign
                       </button>
+                      <button
+                        color="primary"
+                        (click)="onMetaSectionChange('ads')"
+                        class="w-100"
+                        style="display: flex; gap: 5px"
+                      >
+                        <mat-icon>refresh</mat-icon>
+                        Refresh
+                      </button>
                     </div>
                   </div>
 
@@ -1341,7 +1350,7 @@
                     <input matInput [(ngModel)]="tiktokCreateAdgroupName" name="tiktokAdgroupName" />
                   </mat-form-field>
                   <mat-form-field class="w-full" appearance="outline">
-                    <mat-label>Daily budget (USD)</mat-label>
+                    <mat-label>Daily budget (KES)</mat-label>
                     <input matInput type="number" [(ngModel)]="tiktokCreateAdgroupBudget" name="tiktokAdgroupBudget" min="1" />
                   </mat-form-field>
                   <mat-form-field class="w-full" appearance="outline">
@@ -1353,7 +1362,7 @@
                     </mat-select>
                   </mat-form-field>
                   <mat-form-field class="w-full" appearance="outline">
-                    <mat-label>Bid price (USD)</mat-label>
+                    <mat-label>Bid price (KES)</mat-label>
                     <input matInput type="number" [(ngModel)]="tiktokCreateAdgroupBidPrice" name="tiktokAdgroupBidPrice" min="0.01" step="0.01" />
                     <mat-hint>Required for CPC/CPM/OCPM. Max cost per click (CPC) or per 1000 impressions (CPM).</mat-hint>
                   </mat-form-field>
