@@ -82,6 +82,78 @@ export class MarketingComponent implements OnInit {
     'overview' | 'meta' | 'twitter' | 'tiktok' | 'youtube' | 'google'
   > = ['overview', 'meta', 'twitter', 'tiktok', 'youtube', 'google'];
 
+
+  isLoadingVisitorSources = false;
+
+visitorSourcesChartData: any = {
+  labels: [],
+  datasets: [
+    {
+      label: 'Visitors',
+      data: [],
+      borderRadius: 8,
+      barThickness: 22,
+    },
+  ],
+};
+
+visitorSourcesChartOptions: any = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y',
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      enabled: true,
+    },
+  },
+  scales: {
+    x: {
+      beginAtZero: true,
+      ticks: {
+        precision: 0,
+      },
+      grid: {
+        display: true,
+      },
+    },
+    y: {
+      grid: {
+        display: false,
+      },
+    },
+  },
+};
+
+selectedVisitorStatsYear: number | null = new Date().getFullYear();
+
+selectedVisitorStatsMonth: number | null = new Date().getMonth() + 1;
+
+visitorStatsYears: number[] = [
+  2023,
+  2024,
+  2025,
+  2026,
+];
+
+visitorStatsMonths = [
+  { label: 'January', value: 1 },
+  { label: 'February', value: 2 },
+  { label: 'March', value: 3 },
+  { label: 'April', value: 4 },
+  { label: 'May', value: 5 },
+  { label: 'June', value: 6 },
+  { label: 'July', value: 7 },
+  { label: 'August', value: 8 },
+  { label: 'September', value: 9 },
+  { label: 'October', value: 10 },
+  { label: 'November', value: 11 },
+  { label: 'December', value: 12 },
+];
+
+
   /** Nav row title matching the selected channel */
   get selectedChannelTitle(): string {
     const labels: Record<typeof this.selectedChannel, string> = {
@@ -717,6 +789,7 @@ export class MarketingComponent implements OnInit {
     this.selectedChannel = channel;
     if (channel === 'overview') {
       this.loadOverviewStats();
+      this.loadVisitorSourceStats();
       if (this.tiktokStatus.connected) {
         this.loadTiktokOverviewStats();
       } else {
@@ -2464,6 +2537,7 @@ export class MarketingComponent implements OnInit {
           };
         }
         this.isLoadingOverview = false;
+
         this.updateOverviewCharts();
       },
       error: (error) => {
@@ -3496,5 +3570,134 @@ export class MarketingComponent implements OnInit {
     if (!dateString) return 'Not scheduled';
     const date = new Date(dateString);
     return date.toLocaleString();
+  }
+
+  loadVisitorSourceStatsOld() {
+    this.isLoadingVisitorSources = true;
+  
+    let payload: any = {};
+  
+    switch (this.selectedOverviewDatePreset) {
+      case 'today':
+        payload = {
+          year: new Date().getFullYear(),
+          month: new Date().getMonth() + 1,
+        };
+        break;
+  
+      case 'this_month':
+        payload = {
+          year: new Date().getFullYear(),
+          month: new Date().getMonth() + 1,
+        };
+        break;
+  
+      case 'this_year':
+        payload = {
+          year: new Date().getFullYear(),
+        };
+        break;
+  
+      default:
+        payload = {};
+        break;
+    }
+  
+    this.marketingService.getVisitorSourceStats(payload).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const labels = response.data.map((item: any) =>
+            this.capitalizeSource(item.source)
+          );
+  
+          const values = response.data.map((item: any) => item.visits);
+  
+          this.visitorSourcesChartData = {
+            labels,
+            datasets: [
+              {
+                label: 'Visitors',
+                data: values,
+                borderRadius: 8,
+                barThickness: 22,
+              },
+            ],
+          };
+        }
+  
+        this.isLoadingVisitorSources = false;
+      },
+      error: (error) => {
+        console.error('Error loading visitor source stats:', error);
+  
+        this.snackBar.open(
+          error.error?.message || 'Failed to load visitor source statistics',
+          'Close',
+          { duration: 3000 }
+        );
+  
+        this.isLoadingVisitorSources = false;
+      },
+    });
+  }
+
+  capitalizeSource(source: string): string {
+    if (!source) return 'Organic';
+  
+    return source.charAt(0).toUpperCase() + source.slice(1);
+  }
+
+  loadVisitorSourceStats() {
+    this.isLoadingVisitorSources = true;
+  
+    const payload: any = {};
+  
+    if (this.selectedVisitorStatsYear) {
+      payload.year = this.selectedVisitorStatsYear;
+    }
+  
+    if (this.selectedVisitorStatsMonth) {
+      payload.month = this.selectedVisitorStatsMonth;
+    }
+  
+    this.marketingService.getVisitorSourceStats(payload).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+  
+          const labels = response.data.map((item: any) =>
+            this.capitalizeSource(item.source)
+          );
+  
+          const values = response.data.map(
+            (item: any) => item.visits
+          );
+  
+          this.visitorSourcesChartData = {
+            labels,
+            datasets: [
+              {
+                label: 'Visitors',
+                data: values,
+                borderRadius: 8,
+                barThickness: 22,
+              },
+            ],
+          };
+        }
+  
+        this.isLoadingVisitorSources = false;
+      },
+      error: (error) => {
+        console.error('Error loading visitor source stats:', error);
+  
+        this.snackBar.open(
+          error.error?.message || 'Failed to load visitor source statistics',
+          'Close',
+          { duration: 3000 }
+        );
+  
+        this.isLoadingVisitorSources = false;
+      },
+    });
   }
 }

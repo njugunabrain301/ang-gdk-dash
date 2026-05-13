@@ -94,6 +94,16 @@ export class MarketingService {
     return this.httpClient.get<ApiResponse<{ totalSpend: number; activeAds: number; totalAds: number; clicks: number; impressions: number; reach: number; ctr: number; cpc: number }>>(url);
   }
 
+   /**
+   * Get marketing overview statistics
+   */
+   getVisitorSourceStats(data: any): Observable<ApiResponse<any>> {
+    return this.httpClient.post<ApiResponse<any>>(
+      '/marketing/statistics',
+      data
+    );
+  }
+
   /**
    * Get creative details by creative ID
    */
