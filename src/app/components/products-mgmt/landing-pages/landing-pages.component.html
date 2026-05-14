@@ -563,9 +563,12 @@
         color="primary"
         (click)="submitGenerateLp()"
         [disabled]="isGenerateLpLoading || !generateLpInstructions.trim()"
+        style="display: flex"
       >
+      <span style="display: flex">
         <mat-spinner *ngIf="isGenerateLpLoading" diameter="20" class="inline-block mr-2"></mat-spinner>
         {{ isGenerateLpLoading ? 'Generating...' : 'Generate' }}
+        </span>
       </button>
     </div>
   </div>
