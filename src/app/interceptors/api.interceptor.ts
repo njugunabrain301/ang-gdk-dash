@@ -30,7 +30,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   return next(modifiedReq).pipe(
     catchError((error: HttpErrorResponse) => {
       // Only attempt fallback in production and if error is 404, 503, or 504
-      if (production && ![403, 401, 500].includes(error.status)) {
+      if (production && [404, 503, 504].includes(error.status)) {
         // Try backup server
         const backupReq = createRequest(backupURL);
         return next(backupReq);
