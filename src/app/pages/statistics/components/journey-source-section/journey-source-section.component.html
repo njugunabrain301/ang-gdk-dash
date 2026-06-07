@@ -1,0 +1,120 @@
+<mat-card class="source-section mb-6">
+  <mat-card-header class="pb-2">
+    <mat-card-title class="text-xl font-semibold text-gray-800">
+      {{ sourceLabel }}
+    </mat-card-title>
+    <mat-card-subtitle class="text-sm text-gray-600 mt-1">
+      Visitors: {{ sourceData.visitors | number }} &nbsp;|&nbsp; Leads:
+      {{ sourceData.leads | number }} &nbsp;|&nbsp; Conversion Rate:
+      {{ conversionRateLabel }}
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div
+      class="journey-explorer-label text-xs uppercase tracking-wide text-gray-500 mb-2"
+    >
+      Journey Explorer
+    </div>
+
+    @if (graphNodes.length === 0) {
+      <p class="text-gray-500 text-sm py-4">
+        No journey paths for this source.
+      </p>
+    } @else {
+      <div class="graph-scroll overflow-x-auto overflow-y-hidden pb-4">
+        <ngx-graph
+          class="journey-graph chart-container"
+          [view]="graphView"
+          [nodes]="graphNodes"
+          [links]="graphLinks"
+          [curve]="curve"
+          [layout]="journeyLayout"
+          [layoutSettings]="layoutSettings"
+          [enableZoom]="true"
+          [enablePan]="true"
+          [autoZoom]="false"
+          [autoCenter]="false"
+          [nodeWidth]="140"
+          [nodeHeight]="64"
+          [minZoomLevel]="0.3"
+          [maxZoomLevel]="2"
+          [panOnZoom]="false"
+        >
+          <ng-template #linkTemplate let-link>
+            <svg:g class="edge">
+              <svg:path
+                class="line"
+                [attr.d]="link.line"
+                [class.line-highlighted]="linkHighlighted(link)"
+                [attr.stroke-width]="linkHighlighted(link) ? 2.5 : 1.5"
+                [attr.opacity]="linkOpacity(link)"
+                stroke="#94a3b8"
+                fill="none"
+                marker-end="url(#arrow)"
+              ></svg:path>
+            </svg:g>
+          </ng-template>
+
+          <ng-template #defsTemplate>
+            <svg:marker
+              id="arrow"
+              viewBox="0 -5 10 10"
+              refX="8"
+              refY="0"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto"
+            >
+              <svg:path d="M0,-5L10,0L0,5" fill="#94a3b8"></svg:path>
+            </svg:marker>
+          </ng-template>
+
+          <ng-template #nodeTemplate let-node>
+            <svg:g
+              class="node-group-item"
+              [attr.opacity]="nodeOpacity(node)"
+              (click)="onNodeClick(node, $event)"
+            >
+              <svg:foreignObject
+                [attr.width]="node.dimension?.width ?? 140"
+                [attr.height]="node.dimension?.height ?? 64"
+                x="0"
+                y="0"
+              >
+                <div
+                  xmlns="http://www.w3.org/1999/xhtml"
+                  class="journey-node"
+                  [class.journey-node-lead]="node.data.isLead"
+                  [class.journey-node-highlighted]="nodeHighlighted(node)"
+                  [matTooltip]="tooltipFor(node)"
+                  matTooltipClass="journey-tooltip"
+                >
+                  @if (node.data.hasChildren) {
+                    <button
+                      type="button"
+                      class="collapse-btn"
+                      (click)="toggleCollapse(node, $event)"
+                      [attr.aria-label]="
+                        node.data.collapsed ? 'Expand' : 'Collapse'
+                      "
+                    >
+                      {{ collapseIcon(node) }}
+                    </button>
+                  }
+                  <div class="node-label" [attr.title]="labelTitle(node)">
+                    @if (node.data.isLead) {
+                      <span class="lead-dot">●</span>
+                    }
+                    {{ node.data.displayLabel }}
+                  </div>
+                  <div class="node-count">({{ node.data.count | number }})</div>
+                </div>
+              </svg:foreignObject>
+            </svg:g>
+          </ng-template>
+        </ngx-graph>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

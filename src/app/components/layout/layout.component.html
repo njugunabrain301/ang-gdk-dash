@@ -33,6 +33,14 @@
           <span class="text-gray-300">Dashboard</span>
         </a>
         <a
+          routerLink="/statistics"
+          (click)="onNavItemClick()"
+          class="text-gray-300 hover:bg-gray-700 hover:text-white flex items-center my-2 ml-2 p-2"
+        >
+          <mat-icon class="mr-3 text-gray-400">timeline</mat-icon>
+          <span class="text-gray-300">Statistics</span>
+        </a>
+        <a
           routerLink="/profile"
           (click)="onNavItemClick()"
           class="flex items-center text-gray-300 hover:bg-gray-700 hover:text-white my-2 ml-2 p-2"

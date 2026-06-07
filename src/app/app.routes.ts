@@ -24,6 +24,13 @@ export const routes: Routes = [
     component: LayoutComponent,
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      {
+        path: 'statistics',
+        loadComponent: () =>
+          import('./pages/statistics/statistics.component').then(
+            (m) => m.StatisticsComponent
+          ),
+      },
       { path: 'profile', component: ProfileComponent },
       { path: 'products', component: ProductsComponent },
       { path: 'promotions', component: PromotionsComponent },
