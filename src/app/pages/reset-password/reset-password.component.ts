@@ -35,7 +35,7 @@ export class ResetPasswordComponent implements OnInit {
   constructor(
     private resetPasswordService: ResetPasswordService,
     private route: ActivatedRoute,
-    private encryptionService: EncryptionService
+    private encryptionService: EncryptionService,
   ) {}
 
   ngOnInit() {

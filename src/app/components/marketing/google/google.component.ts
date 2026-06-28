@@ -7,10 +7,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import {
   GoogleAdsService,
   GoogleConnectionStatus,
+  GoogleAdsAccountOption,
   GoogleCampaign,
   GoogleAdGroup,
   GoogleShoppingAd,
@@ -32,6 +35,8 @@ import {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatTooltipModule,
+    MatSelectModule,
+    MatFormFieldModule,
     RouterModule,
   ],
   templateUrl: './google.component.html',
@@ -41,6 +46,14 @@ export class GoogleComponent implements OnInit {
   selectedGoogleSection: 'overview' | 'campaigns' | 'adGroups' | 'ads' = 'overview';
   googleConnectionStatus: GoogleConnectionStatus = { connected: false };
   isLoadingGoogleStatus = false;
+
+  // Account picker
+  showAccountPicker = false;
+  adsAccounts: GoogleAdsAccountOption[] = [];
+  selectedAdsAccountId: string | null = null;
+  isLoadingAdsAccounts = false;
+  isSelectingAdsAccount = false;
+  adsAccountsError: string | null = null;
 
   // Overview (metrics)
   metricsData: MetricsResponse | null = null;
@@ -113,7 +126,8 @@ export class GoogleComponent implements OnInit {
   // Create campaign modal (Phase 3)
   showCreateCampaignModal = false;
   createCampaignName = '';
-  createCampaignAmountMicros = 1_000_000; // 1 unit default
+  /** Daily budget in USD (converted to micros on submit). */
+  createCampaignDailyBudgetUsd = 1;
   createCampaignMerchantId = '';
   createCampaignSubmitting = false;
 
@@ -171,7 +185,10 @@ export class GoogleComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.googleConnectionStatus = response.data;
-          if (response.data.connected) {
+          if (response.data.needsCustomerSelection) {
+            this.openAccountSelection();
+          } else if (response.data.connected) {
+            this.showAccountPicker = false;
             this.loadOverviewMetrics();
           }
         }
@@ -214,6 +231,8 @@ export class GoogleComponent implements OnInit {
         if (response.success) {
           this.snackBar.open('Google account disconnected successfully', 'Close', { duration: 3000 });
           this.googleConnectionStatus = { connected: false };
+          this.showAccountPicker = false;
+          this.adsAccounts = [];
         }
       },
       error: (error) => {
@@ -230,7 +249,6 @@ export class GoogleComponent implements OnInit {
       const message = params['message'];
 
       if (channel === 'google' && status) {
-        // Remove query params from URL
         this.router.navigate([], {
           relativeTo: this.route,
           queryParams: {},
@@ -246,6 +264,86 @@ export class GoogleComponent implements OnInit {
         }
       }
     });
+  }
+
+  private needsAccountSelection(): boolean {
+    return !!(
+      this.googleConnectionStatus.connected &&
+      this.googleConnectionStatus.needsCustomerSelection
+    );
+  }
+
+  openAccountSelection() {
+    this.showAccountPicker = true;
+    this.adsAccountsError = null;
+    this.selectedAdsAccountId = null;
+    this.isLoadingAdsAccounts = true;
+    this.googleAdsService.getAdsAccounts().subscribe({
+      next: (res) => {
+        this.isLoadingAdsAccounts = false;
+        if (res.success && res.data?.accounts) {
+          this.adsAccounts = res.data.accounts;
+          if (this.adsAccounts.length === 1) {
+            this.selectedAdsAccountId = this.adsAccounts[0].id;
+          }
+          if (this.adsAccounts.length === 0) {
+            this.adsAccountsError = 'No Google Ads accounts found for this connection.';
+          }
+        } else {
+          this.adsAccounts = [];
+          this.adsAccountsError = res?.error || 'Failed to load Google Ads accounts';
+        }
+      },
+      error: (err) => {
+        this.isLoadingAdsAccounts = false;
+        this.adsAccounts = [];
+        this.adsAccountsError =
+          err?.error?.error || err?.message || 'Failed to load Google Ads accounts';
+      },
+    });
+  }
+
+  cancelAccountSelection() {
+    if (this.needsAccountSelection()) return;
+    this.showAccountPicker = false;
+    this.adsAccountsError = null;
+  }
+
+  confirmAdsAccountSelection() {
+    const customerId = this.selectedAdsAccountId?.trim();
+    if (!customerId) {
+      this.snackBar.open('Select a Google Ads account', 'Close', { duration: 3000 });
+      return;
+    }
+    this.isSelectingAdsAccount = true;
+    this.googleAdsService.selectAdsAccount(customerId).subscribe({
+      next: (res) => {
+        this.isSelectingAdsAccount = false;
+        if (res.success && res.data) {
+          this.googleConnectionStatus = res.data;
+          this.showAccountPicker = false;
+          this.snackBar.open('Google Ads account selected', 'Close', { duration: 3000 });
+          this.loadOverviewMetrics();
+        } else {
+          this.snackBar.open(res?.error || 'Failed to select account', 'Close', { duration: 4000 });
+        }
+      },
+      error: (err) => {
+        this.isSelectingAdsAccount = false;
+        this.snackBar.open(
+          err?.error?.error || err?.message || 'Failed to select account',
+          'Close',
+          { duration: 4000 },
+        );
+      },
+    });
+  }
+
+  formatCustomerIdDisplay(customerId: string | null | undefined): string {
+    if (!customerId) return '';
+    const digits = String(customerId).replace(/\D/g, '');
+    if (digits.length !== 10) return digits;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
   onGoogleSectionChange(section: 'overview' | 'campaigns' | 'adGroups' | 'ads') {
@@ -264,7 +362,7 @@ export class GoogleComponent implements OnInit {
   }
 
   loadOverviewMetrics() {
-    if (!this.googleConnectionStatus.connected) return;
+    if (!this.googleConnectionStatus.connected || this.needsAccountSelection()) return;
     this.isLoadingMetrics = true;
     this.metricsError = null;
     this.googleAdsService.getMetrics({ entity: 'campaign', from: this.metricsFrom, to: this.metricsTo }).subscribe({
@@ -281,7 +379,7 @@ export class GoogleComponent implements OnInit {
   }
 
   loadCampaigns(pageToken?: string) {
-    if (!this.googleConnectionStatus.connected) return;
+    if (!this.googleConnectionStatus.connected || this.needsAccountSelection()) return;
     if (!pageToken) {
       this.isLoadingCampaigns = true;
       this.campaignsError = null;
@@ -346,7 +444,7 @@ export class GoogleComponent implements OnInit {
    * @param append true: merge next Google page into buffer and advance the visible slice (after nextPageToken)
    */
   loadShoppingAds(reset = false, append = false) {
-    if (!this.googleConnectionStatus.connected) return;
+    if (!this.googleConnectionStatus.connected || this.needsAccountSelection()) return;
     if (reset) {
       this.shoppingAdsTokenTrail = [];
       this.shoppingAdsRequestPageToken = undefined;
@@ -541,7 +639,7 @@ export class GoogleComponent implements OnInit {
   openCreateCampaignModal() {
     this.showCreateCampaignModal = true;
     this.createCampaignName = '';
-    this.createCampaignAmountMicros = 1_000_000;
+    this.createCampaignDailyBudgetUsd = 1;
     this.createCampaignMerchantId = '';
   }
 
@@ -556,10 +654,16 @@ export class GoogleComponent implements OnInit {
       this.snackBar.open('Enter campaign name', 'Close', { duration: 3000 });
       return;
     }
+    const budgetUsd = Number(this.createCampaignDailyBudgetUsd);
+    if (Number.isNaN(budgetUsd) || budgetUsd <= 0) {
+      this.snackBar.open('Enter a valid daily budget (USD)', 'Close', { duration: 3000 });
+      return;
+    }
+    const amountMicros = Math.round(budgetUsd * 1_000_000);
     this.createCampaignSubmitting = true;
     this.googleAdsService.createCampaign({
       name,
-      amountMicros: this.createCampaignAmountMicros,
+      amountMicros,
       merchantId: this.createCampaignMerchantId?.trim() || undefined,
     }).subscribe({
       next: (res) => {
@@ -900,7 +1004,7 @@ export class GoogleComponent implements OnInit {
   // --- Ad Groups tab ---
 
   loadAdGroupsForCampaign(campaignId: string | null, pageToken?: string) {
-    if (!this.googleConnectionStatus.connected || !campaignId) return;
+    if (!this.googleConnectionStatus.connected || this.needsAccountSelection() || !campaignId) return;
     if (!pageToken) {
       this.adGroupsForCampaign = [];
       this.adGroupsForCampaignError = null;

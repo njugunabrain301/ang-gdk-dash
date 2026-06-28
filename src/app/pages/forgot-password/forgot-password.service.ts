@@ -2,7 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 interface RequestPasswordResetResponse {
-  token: string;
+  token: string | null;
+  success: boolean;
+  message: string;
   // Add any other properties that your API returns
 }
 
@@ -16,7 +18,7 @@ export class ForgotPasswordService {
   requestPasswordReset(payload: { url: string }) {
     return this.httpClient.post<RequestPasswordResetResponse>(
       '/request-reset-password',
-      payload
+      payload,
     );
   }
 }

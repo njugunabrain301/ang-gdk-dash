@@ -5,11 +5,19 @@ import { ApiResponse } from './dashboard.service';
 
 export interface GoogleConnectionStatus {
   connected: boolean;
+  needsCustomerSelection?: boolean;
   googleAdsCustomerId?: string | null;
+  googleAdsCustomerName?: string | null;
   merchantCenterId?: string | null;
   accountCurrencyCode?: string | null;
   productFeedStoreId?: string | null;
   linkedAt?: string | null;
+}
+
+export interface GoogleAdsAccountOption {
+  id: string;
+  name: string;
+  formattedId?: string;
 }
 
 /** Product from GET /google/product-feed (RSS with g: namespace) */
@@ -50,6 +58,14 @@ export class GoogleAdsService {
    */
   disconnect(): Observable<ApiResponse<{ disconnected: boolean }>> {
     return this.httpClient.post<ApiResponse<{ disconnected: boolean }>>('/google/disconnect', {});
+  }
+
+  getAdsAccounts(): Observable<ApiResponse<{ accounts: GoogleAdsAccountOption[] }>> {
+    return this.httpClient.get<ApiResponse<{ accounts: GoogleAdsAccountOption[] }>>('/google/ads-accounts');
+  }
+
+  selectAdsAccount(customerId: string): Observable<ApiResponse<GoogleConnectionStatus>> {
+    return this.httpClient.post<ApiResponse<GoogleConnectionStatus>>('/google/ads-accounts/select', { customerId });
   }
 
   /**

@@ -31,7 +31,10 @@ export class ForgotPasswordComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  constructor(private fb: FormBuilder, private service: ForgotPasswordService) {
+  constructor(
+    private fb: FormBuilder,
+    private service: ForgotPasswordService,
+  ) {
     this.forgotPasswordForm = this.fb.group({
       url: ['', [Validators.required]],
     });
@@ -50,10 +53,17 @@ export class ForgotPasswordComponent implements OnInit {
       this.service.requestPasswordReset({ url: url }).subscribe({
         next: (response) => {
           this.isLoading = false;
-          this.requestSuccessful = true;
-          this.successMessage =
-            'Password reset link has been sent to your email.';
-          this.forgotPasswordForm.disable();
+          if (response.success) {
+            this.requestSuccessful = true;
+            this.successMessage =
+              'Password reset link has been sent to your email.';
+            this.forgotPasswordForm.disable();
+          } else {
+            this.errorMessage =
+              response.message || 'An error occurred. Please try again.';
+            this.requestSuccessful = false;
+            this.isLoading = false;
+          }
         },
         error: (error) => {
           this.isLoading = false;
