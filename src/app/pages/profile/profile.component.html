@@ -6,7 +6,7 @@
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
-          'text-blue-500 border-b-2 border-blue-500': activeTab === 'profile'
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'profile',
         }"
         (click)="setActiveTab('profile')"
       >
@@ -16,7 +16,7 @@
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
-          'text-blue-500 border-b-2 border-blue-500': activeTab === 'policies'
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'policies',
         }"
         (click)="setActiveTab('policies')"
       >
@@ -26,7 +26,7 @@
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
-          'text-blue-500 border-b-2 border-blue-500': activeTab === 'shipping'
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'shipping',
         }"
         (click)="setActiveTab('shipping')"
       >
@@ -36,18 +36,18 @@
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
-          'text-blue-500 border-b-2 border-blue-500': activeTab === 'payments'
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'payments',
         }"
         (click)="setActiveTab('payments')"
       >
         Payments
       </button>
       <button
-        *ngIf="isBusinessPackage"
+        *ngIf="isBusinessPackage && false"
         mat-button
         class="flex-1 py-3"
         [ngClass]="{
-          'text-blue-500 border-b-2 border-blue-500': activeTab === 'advanced'
+          'text-blue-500 border-b-2 border-blue-500': activeTab === 'advanced',
         }"
         (click)="setActiveTab('advanced')"
       >
