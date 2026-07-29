@@ -101,6 +101,23 @@ export class StatisticsComponent implements OnInit {
     return 'No journey data for this period.';
   }
 
+  get aggregateVisitors(): number {
+    return this.sources.reduce((total, source) => total + (source.visitors || 0), 0);
+  }
+
+  get aggregateLeads(): number {
+    return this.sources.reduce((total, source) => total + (source.leads || 0), 0);
+  }
+
+  get aggregateConversionRate(): number {
+    const visitors = this.aggregateVisitors;
+    return visitors > 0 ? this.aggregateLeads / visitors : 0;
+  }
+
+  get aggregateConversionRateLabel(): string {
+    return `${(this.aggregateConversionRate * 100).toFixed(2)}%`;
+  }
+
   loadJourneys(): void {
     this.isLoading = true;
     this.errorMessage = null;

@@ -70,7 +70,18 @@ export class GoogleComponent implements OnInit {
   // Ad groups tab
   selectedAdGroupsCampaignId: string | null = null;
   adGroupsForCampaign: GoogleAdGroup[] = [];
+  adGroupsPageSize = 10;
+  /** Buffered ad groups from the API; UI shows `adGroupsPageSize` rows at a time */
+  adGroupsForCampaignBuffer: GoogleAdGroup[] = [];
+  adGroupsListStart = 0;
+  adGroupsStartStack: number[] = [];
+  /** Token sent to Google for the current ad groups page */
+  adGroupsRequestPageToken: string | undefined = undefined;
   adGroupsForCampaignNextPageToken: string | null = null;
+  /** Prior request tokens for Previous (undefined = first page) */
+  adGroupsTokenTrail: (string | undefined)[] = [];
+  /** Token to restore onto trail if a backward page request fails */
+  private adGroupsRestoreTokenOnError: string | undefined | null = null;
   isLoadingAdGroupsForCampaign = false;
   adGroupsForCampaignError: string | null = null;
 
@@ -1003,32 +1014,111 @@ export class GoogleComponent implements OnInit {
 
   // --- Ad Groups tab ---
 
-  loadAdGroupsForCampaign(campaignId: string | null, pageToken?: string) {
+  private applyAdGroupsPage() {
+    const start = this.adGroupsListStart;
+    this.adGroupsForCampaign = this.adGroupsForCampaignBuffer.slice(start, start + this.adGroupsPageSize);
+  }
+
+  loadAdGroupsForCampaign(campaignId: string | null, reset = true, append = false) {
     if (!this.googleConnectionStatus.connected || this.needsAccountSelection() || !campaignId) return;
-    if (!pageToken) {
+    if (reset) {
       this.adGroupsForCampaign = [];
+      this.adGroupsForCampaignBuffer = [];
+      this.adGroupsListStart = 0;
+      this.adGroupsStartStack = [];
       this.adGroupsForCampaignError = null;
       this.adGroupsForCampaignNextPageToken = null;
-      this.isLoadingAdGroupsForCampaign = true;
+      this.adGroupsRequestPageToken = undefined;
+      this.adGroupsTokenTrail = [];
+      this.adGroupsRestoreTokenOnError = null;
     }
-    this.googleAdsService.getAdGroups(campaignId, { limit: 50, pageToken: pageToken || undefined }).subscribe({
-      next: (res) => {
-        if (res.success && res.data?.data) {
-          if (pageToken) {
-            this.adGroupsForCampaign = this.adGroupsForCampaign.concat(res.data.data);
-          } else {
-            this.adGroupsForCampaign = res.data.data;
+    this.isLoadingAdGroupsForCampaign = true;
+    this.googleAdsService
+      .getAdGroups(campaignId, {
+        limit: 100,
+        pageToken: this.adGroupsRequestPageToken,
+      })
+      .subscribe({
+        next: (res) => {
+          this.adGroupsRestoreTokenOnError = null;
+          if (res.success && res.data?.data) {
+            const incoming = res.data.data;
+            if (append) {
+              const start = this.adGroupsListStart;
+              const prevLen = this.adGroupsForCampaignBuffer.length;
+              this.adGroupsForCampaignBuffer = this.adGroupsForCampaignBuffer.concat(incoming);
+              const span = Math.min(this.adGroupsPageSize, Math.max(0, prevLen - start));
+              this.adGroupsListStart = start + span;
+            } else {
+              this.adGroupsForCampaignBuffer = incoming;
+              this.adGroupsListStart = 0;
+            }
+            this.applyAdGroupsPage();
+            this.adGroupsForCampaignNextPageToken = res.data.nextPageToken || null;
+          } else if (reset) {
+            this.adGroupsForCampaign = [];
+            this.adGroupsForCampaignBuffer = [];
+            this.adGroupsListStart = 0;
+            this.adGroupsForCampaignNextPageToken = null;
           }
-          this.adGroupsForCampaignNextPageToken = res.data.nextPageToken || null;
-        }
-        this.isLoadingAdGroupsForCampaign = false;
-      },
-      error: (err) => {
-        this.adGroupsForCampaignError = err?.error?.error || err?.message || 'Failed to load ad groups';
-        this.adGroupsForCampaign = [];
-        this.isLoadingAdGroupsForCampaign = false;
-      },
-    });
+          this.isLoadingAdGroupsForCampaign = false;
+        },
+        error: (err) => {
+          this.adGroupsForCampaignError = err?.error?.error || err?.message || 'Failed to load ad groups';
+          this.adGroupsForCampaign = [];
+          this.adGroupsForCampaignBuffer = [];
+          this.adGroupsListStart = 0;
+          this.adGroupsForCampaignNextPageToken = null;
+          if (!reset) {
+            if (this.adGroupsRestoreTokenOnError !== null) {
+              this.adGroupsTokenTrail.push(this.adGroupsRestoreTokenOnError);
+              this.adGroupsRestoreTokenOnError = null;
+            } else {
+              this.adGroupsTokenTrail.pop();
+            }
+            this.adGroupsStartStack.pop();
+          }
+          this.isLoadingAdGroupsForCampaign = false;
+        },
+      });
+  }
+
+  adGroupsNextPage() {
+    if (this.isLoadingAdGroupsForCampaign) return;
+    const nextStart = this.adGroupsListStart + this.adGroupsPageSize;
+    if (nextStart < this.adGroupsForCampaignBuffer.length) {
+      this.adGroupsStartStack.push(this.adGroupsListStart);
+      this.adGroupsListStart = nextStart;
+      this.applyAdGroupsPage();
+      return;
+    }
+    if (!this.adGroupsForCampaignNextPageToken) return;
+    this.adGroupsRestoreTokenOnError = null;
+    this.adGroupsStartStack.push(this.adGroupsListStart);
+    this.adGroupsTokenTrail.push(this.adGroupsRequestPageToken);
+    this.adGroupsRequestPageToken = this.adGroupsForCampaignNextPageToken;
+    this.loadAdGroupsForCampaign(this.selectedAdGroupsCampaignId, false, true);
+  }
+
+  adGroupsPrevPage() {
+    if (this.isLoadingAdGroupsForCampaign) return;
+    if (this.adGroupsStartStack.length > 0) {
+      this.adGroupsListStart = this.adGroupsStartStack.pop()!;
+      this.applyAdGroupsPage();
+      return;
+    }
+    if (this.adGroupsTokenTrail.length === 0) return;
+    this.adGroupsRestoreTokenOnError = this.adGroupsTokenTrail.pop()!;
+    this.adGroupsRequestPageToken = this.adGroupsRestoreTokenOnError;
+    this.loadAdGroupsForCampaign(this.selectedAdGroupsCampaignId, false);
+  }
+
+  adGroupsCanGoPrev(): boolean {
+    return this.adGroupsStartStack.length > 0 || this.adGroupsTokenTrail.length > 0;
+  }
+
+  adGroupsCanGoNext(): boolean {
+    return this.adGroupsListStart + this.adGroupsPageSize < this.adGroupsForCampaignBuffer.length || !!this.adGroupsForCampaignNextPageToken;
   }
 
   openCreateShoppingAdModal() {
