@@ -144,6 +144,14 @@ export class GoogleAdsService {
     return this.httpClient.get<ApiResponse<ShoppingAdProductsResponse>>(`/google/shopping-ads/products?${p.toString()}`);
   }
 
+  /**
+   * GET /google/fx-rate — rate for converting Ads account currency amounts into `to`
+   * (default KES) so Google figures can sit beside the other channels.
+   */
+  getFxRate(to: string = 'KES'): Observable<ApiResponse<FxRate>> {
+    return this.httpClient.get<ApiResponse<FxRate>>(`/google/fx-rate?to=${encodeURIComponent(to)}`);
+  }
+
   /** Metrics from GET /google/metrics (entity, from, to) */
   getMetrics(params: { entity: 'campaign' | 'ad_group' | 'ad'; from?: string; to?: string }): Observable<ApiResponse<MetricsResponse>> {
     const p = new URLSearchParams({ entity: params.entity });
@@ -154,8 +162,27 @@ export class GoogleAdsService {
 
   // --- Phase 3: create and update ---
 
-  createCampaign(body: { name: string; amountMicros?: number; merchantId?: string }): Observable<ApiResponse<{ campaignId: string; resourceName?: string }>> {
+  createCampaign(body: {
+    name: string;
+    amountMicros?: number;
+    merchantId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Observable<ApiResponse<{ campaignId: string; resourceName?: string }>> {
     return this.httpClient.post<ApiResponse<{ campaignId: string; resourceName?: string }>>('/google/campaigns', body);
+  }
+
+  /**
+   * Set campaign flight dates. Google only supports dates at campaign level, and the start date is
+   * immutable once the campaign has started, so send `endDate` alone to end or restart a campaign.
+   * `clearEndDate` makes it run indefinitely; `enable` (default true for an ended campaign) also
+   * re-enables a paused one.
+   */
+  updateCampaignSchedule(
+    campaignId: string,
+    body: { startDate?: string; endDate?: string; clearEndDate?: boolean; enable?: boolean },
+  ): Observable<ApiResponse<CampaignSchedule>> {
+    return this.httpClient.post<ApiResponse<CampaignSchedule>>(`/google/campaigns/${campaignId}/schedule`, body);
   }
 
   pauseCampaign(campaignId: string): Observable<ApiResponse<{ campaignId: string; status: string }>> {
@@ -218,6 +245,10 @@ export interface GoogleCampaign {
   name: string;
   status: string;
   advertisingChannelType?: string;
+  /** First serving day, YYYY-MM-DD in the Ads account time zone. */
+  startDate?: string | null;
+  /** Last serving day, YYYY-MM-DD. Null when the campaign runs indefinitely. */
+  endDate?: string | null;
   budgetAmountMicros?: string | number;
   resourceName?: string;
 }
@@ -227,7 +258,18 @@ export interface CampaignsResponse {
   page: number;
   limit: number;
   total: number;
+  /** Today in the Ads account time zone; campaign dates must be compared against it, not the browser date. */
+  accountToday?: string;
   nextPageToken?: string;
+}
+
+export interface CampaignSchedule {
+  campaignId: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  status: string;
+  accountToday?: string;
+  changed?: boolean;
 }
 
 export interface GoogleAdGroup {
@@ -296,6 +338,17 @@ export interface ShoppingAdProductsResponse {
   from?: string;
   to?: string;
   products: ShoppingAdProduct[];
+}
+
+export interface FxRate {
+  /** Multiply an amount in `from` by this to get `to`. */
+  rate: number;
+  from: string;
+  to: string;
+  /** When the provider last published the rate. */
+  asOf?: string | null;
+  /** False when both currencies are the same and no conversion was applied. */
+  converted: boolean;
 }
 
 export interface MetricsSummary {

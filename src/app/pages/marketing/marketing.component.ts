@@ -39,6 +39,10 @@ import {
 import { ProductsService } from '../../services/products.service';
 import { ProductService } from '../../services/product.service';
 import { ScheduleService, ScheduleData } from '../../services/schedule.service';
+import {
+  GoogleAdsService,
+  GoogleConnectionStatus,
+} from '../../services/google-ads.service';
 import { GoogleComponent } from '../../components/marketing/google/google.component';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, registerables, ChartData, ChartOptions } from 'chart.js';
@@ -311,10 +315,29 @@ visitorStatsMonths = [
   };
   isLoadingTiktokOverview = false;
 
+  /**
+   * Google overview statistics for the selected date range (Shopping campaigns).
+   * Reach and frequency have no Shopping equivalent in the Google Ads API, so they are omitted.
+   */
+  googleOverviewStats = {
+    spend: 0, impressions: 0, clicks: 0, ctr: 0, cpc: 0, conversionsValue: 0, campaigns: 0,
+  };
+  isLoadingGoogleOverview = false;
+  googleOverviewStatus: GoogleConnectionStatus = { connected: false };
+  /** Rate applied to Google amounts so they display in KES like the other channels. */
+  googleFxRate = 1;
+  googleFxFrom = '';
+  googleFxAsOf: string | null = null;
+  googleFxApplied = false;
+
   // Overview charts
   spendChartData: ChartData<'doughnut'> = {
-    labels: ['Facebook', 'TikTok'],
-    datasets: [{ data: [0, 0], backgroundColor: ['#3B82F6', '#10B981'], hoverBackgroundColor: ['#2563EB', '#059669'] }],
+    labels: ['Facebook', 'TikTok', 'Google'],
+    datasets: [{
+      data: [0, 0, 0],
+      backgroundColor: ['#3B82F6', '#10B981', '#F59E0B'],
+      hoverBackgroundColor: ['#2563EB', '#059669', '#D97706'],
+    }],
   };
   spendChartOptions: ChartOptions<'doughnut'> = {
     responsive: true,
@@ -328,7 +351,9 @@ visitorStatsMonths = [
             const val = ctx.parsed || 0;
             const total = (ctx.dataset.data as number[]).reduce((a, b) => a + b, 0);
             const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
-            return `${ctx.label}: Ksh. ${val.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pct}%)`;
+            // Google spend is reported in the Ads account currency; converted to KES when a rate is available.
+            const currency = ctx.label === 'Google' ? this.googleDisplayCurrency : 'Ksh.';
+            return `${ctx.label}: ${currency} ${val.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pct}%)`;
           },
         },
       },
@@ -339,6 +364,8 @@ visitorStatsMonths = [
     datasets: [
       { label: 'Facebook', data: [0, 0, 0], backgroundColor: '#3B82F6' },
       { label: 'TikTok', data: [0, 0, 0], backgroundColor: '#10B981' },
+      // Reach is null (not zero) for Google: the API cannot report it for Shopping campaigns.
+      { label: 'Google', data: [0, 0, null], backgroundColor: '#F59E0B' },
     ],
   };
   performanceChartOptions: ChartOptions<'bar'> = {
@@ -346,7 +373,15 @@ visitorStatsMonths = [
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } },
-      tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${(ctx.parsed.y || 0).toLocaleString()}` } },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const value = ctx.parsed?.y;
+            if (value == null) return `${ctx.dataset.label}: N/A`;
+            return `${ctx.dataset.label}: ${value.toLocaleString()}`;
+          },
+        },
+      },
     },
     scales: {
       y: {
@@ -697,6 +732,7 @@ visitorStatsMonths = [
     private productsService: ProductsService,
     private productService: ProductService,
     private scheduleService: ScheduleService,
+    private googleAdsService: GoogleAdsService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
@@ -794,6 +830,11 @@ visitorStatsMonths = [
         this.loadTiktokOverviewStats();
       } else {
         this.loadTiktokStatus();
+      }
+      if (this.isGoogleOverviewReady) {
+        this.loadGoogleOverviewStats();
+      } else {
+        this.loadGoogleOverviewStatus();
       }
     } else if (channel === 'meta') {
       this.loadFacebookStatus();
@@ -2589,12 +2630,141 @@ visitorStatsMonths = [
     });
   }
 
+  /** Currency of the linked Google Ads account; Google metrics are reported in it, not in KES. */
+  get googleOverviewCurrency(): string {
+    return this.googleOverviewStatus.accountCurrencyCode || 'USD';
+  }
+
+  /** True once a Google Ads account is connected and selected, so metrics can be requested. */
+  get isGoogleOverviewReady(): boolean {
+    return (
+      !!this.googleOverviewStatus.connected &&
+      !this.googleOverviewStatus.needsCustomerSelection
+    );
+  }
+
+  /** Currency the Google figures are shown in: KES once converted, otherwise the account currency. */
+  get googleDisplayCurrency(): string {
+    return this.googleFxApplied ? 'Ksh.' : this.googleOverviewCurrency;
+  }
+
+  get googleSpendDisplay(): number {
+    return this.googleOverviewStats.spend * this.googleFxRate;
+  }
+
+  get googleCpcDisplay(): number {
+    return this.googleOverviewStats.cpc * this.googleFxRate;
+  }
+
+  get googleConversionsValueDisplay(): number {
+    return this.googleOverviewStats.conversionsValue * this.googleFxRate;
+  }
+
+  private resetGoogleOverviewStats() {
+    this.googleOverviewStats = {
+      spend: 0, impressions: 0, clicks: 0, ctr: 0, cpc: 0, conversionsValue: 0, campaigns: 0,
+    };
+  }
+
+  private resetGoogleFx() {
+    this.googleFxRate = 1;
+    this.googleFxFrom = '';
+    this.googleFxAsOf = null;
+    this.googleFxApplied = false;
+  }
+
+  loadGoogleOverviewStatus() {
+    this.googleAdsService.getConnectionStatus().subscribe({
+      next: (res) => {
+        this.googleOverviewStatus = res.success && res.data ? res.data : { connected: false };
+        if (this.isGoogleOverviewReady) {
+          this.loadGoogleFxRate();
+          this.loadGoogleOverviewStats();
+        } else {
+          this.resetGoogleOverviewStats();
+          this.resetGoogleFx();
+          this.updateOverviewCharts();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.googleOverviewStatus = { connected: false };
+        this.resetGoogleOverviewStats();
+        this.resetGoogleFx();
+        this.updateOverviewCharts();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadGoogleFxRate() {
+    this.googleAdsService.getFxRate('KES').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.googleFxRate = Number(res.data.rate) || 1;
+          this.googleFxFrom = res.data.from;
+          this.googleFxAsOf = res.data.asOf ?? null;
+          this.googleFxApplied = !!res.data.converted;
+        } else {
+          this.resetGoogleFx();
+        }
+        this.updateOverviewCharts();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // No rate available: fall back to showing raw amounts in the account currency.
+        this.resetGoogleFx();
+        this.updateOverviewCharts();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadGoogleOverviewStats() {
+    this.isLoadingGoogleOverview = true;
+    const range = this.datePresetToRange(this.selectedOverviewDatePreset);
+    this.googleAdsService.getMetrics({
+      entity: 'campaign',
+      from: range.start_date,
+      to: range.end_date,
+    }).subscribe({
+      next: (res) => {
+        if (res.success && res.data?.summary) {
+          const summary = res.data.summary;
+          const spend = (Number(summary.costMicros) || 0) / 1_000_000;
+          const impressions = Number(summary.impressions) || 0;
+          const clicks = Number(summary.clicks) || 0;
+          this.googleOverviewStats = {
+            spend,
+            impressions,
+            clicks,
+            ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+            cpc: clicks > 0 ? spend / clicks : 0,
+            conversionsValue: Number(summary.conversionsValue) || 0,
+            campaigns: res.data.rows?.length || 0,
+          };
+        } else {
+          this.resetGoogleOverviewStats();
+        }
+        this.isLoadingGoogleOverview = false;
+        this.updateOverviewCharts();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.resetGoogleOverviewStats();
+        this.isLoadingGoogleOverview = false;
+        this.updateOverviewCharts();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   updateOverviewCharts() {
     this.spendChartData = {
       ...this.spendChartData,
       datasets: [{
         ...this.spendChartData.datasets[0],
-        data: [this.overviewStats.totalSpend, this.tiktokOverviewStats.spend],
+        data: [this.overviewStats.totalSpend, this.tiktokOverviewStats.spend, this.googleSpendDisplay],
       }],
     };
     this.performanceChartData = {
@@ -2602,6 +2772,7 @@ visitorStatsMonths = [
       datasets: [
         { ...this.performanceChartData.datasets[0], data: [this.overviewStats.impressions, this.overviewStats.clicks, this.overviewStats.reach] },
         { ...this.performanceChartData.datasets[1], data: [this.tiktokOverviewStats.impressions, this.tiktokOverviewStats.clicks, this.tiktokOverviewStats.reach] },
+        { ...this.performanceChartData.datasets[2], data: [this.googleOverviewStats.impressions, this.googleOverviewStats.clicks, null] },
       ],
     };
   }
@@ -2668,6 +2839,9 @@ visitorStatsMonths = [
     this.loadOverviewStats();
     if (this.tiktokStatus.connected) {
       this.loadTiktokOverviewStats();
+    }
+    if (this.isGoogleOverviewReady) {
+      this.loadGoogleOverviewStats();
     }
   }
 

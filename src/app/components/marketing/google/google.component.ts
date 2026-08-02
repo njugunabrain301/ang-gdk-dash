@@ -67,6 +67,8 @@ export class GoogleComponent implements OnInit {
   campaignsNextPageToken: string | null = null;
   isLoadingCampaigns = false;
   campaignsError: string | null = null;
+  /** Today in the Ads account time zone; campaign dates are only meaningful against it. */
+  accountToday: string | null = null;
   // Ad groups tab
   selectedAdGroupsCampaignId: string | null = null;
   adGroupsForCampaign: GoogleAdGroup[] = [];
@@ -140,6 +142,8 @@ export class GoogleComponent implements OnInit {
   /** Daily budget in USD (converted to micros on submit). */
   createCampaignDailyBudgetUsd = 1;
   createCampaignMerchantId = '';
+  createCampaignStartDate = '';
+  createCampaignEndDate = '';
   createCampaignSubmitting = false;
 
   showEditCampaignBudgetModal = false;
@@ -147,6 +151,18 @@ export class GoogleComponent implements OnInit {
   editBudgetCampaignName = '';
   editBudgetAmountMicros = 1_000_000;
   editBudgetSubmitting = false;
+
+  // Campaign schedule modal (start/end dates, and restart of an ended campaign)
+  showCampaignScheduleModal = false;
+  scheduleCampaignId = '';
+  scheduleCampaignName = '';
+  scheduleStartDate = '';
+  scheduleEndDate = '';
+  scheduleNoEndDate = false;
+  /** True once the campaign has started: Google rejects any change to its start date. */
+  scheduleStartLocked = false;
+  scheduleIsRestart = false;
+  scheduleSubmitting = false;
 
   // Create ad group modal (Phase 3)
   showCreateAdGroupModal = false;
@@ -181,8 +197,11 @@ export class GoogleComponent implements OnInit {
     private router: Router
   ) {}
 
+  /** Local calendar date, not UTC: `toISOString` shifts to the previous day for UTC+ users at night. */
   private dateToString(d: Date): string {
-    return d.toISOString().slice(0, 10);
+    const month = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
   }
 
   ngOnInit() {
@@ -400,6 +419,7 @@ export class GoogleComponent implements OnInit {
     this.googleAdsService.getCampaigns({ limit: 20, pageToken: pageToken || undefined }).subscribe({
       next: (res) => {
         if (res.success && res.data?.data) {
+          this.accountToday = res.data.accountToday ?? this.accountToday;
           if (pageToken) {
             this.campaigns = this.campaigns.concat(res.data.data);
           } else {
@@ -652,6 +672,8 @@ export class GoogleComponent implements OnInit {
     this.createCampaignName = '';
     this.createCampaignDailyBudgetUsd = 1;
     this.createCampaignMerchantId = '';
+    this.createCampaignStartDate = '';
+    this.createCampaignEndDate = '';
   }
 
   closeCreateCampaignModal() {
@@ -670,12 +692,20 @@ export class GoogleComponent implements OnInit {
       this.snackBar.open('Enter a valid daily budget (USD)', 'Close', { duration: 3000 });
       return;
     }
+    const startDate = this.createCampaignStartDate?.trim() || undefined;
+    const endDate = this.createCampaignEndDate?.trim() || undefined;
+    if (startDate && endDate && endDate < startDate) {
+      this.snackBar.open('End date cannot be before the start date', 'Close', { duration: 3000 });
+      return;
+    }
     const amountMicros = Math.round(budgetUsd * 1_000_000);
     this.createCampaignSubmitting = true;
     this.googleAdsService.createCampaign({
       name,
       amountMicros,
       merchantId: this.createCampaignMerchantId?.trim() || undefined,
+      startDate,
+      endDate,
     }).subscribe({
       next: (res) => {
         this.createCampaignSubmitting = false;
@@ -731,6 +761,119 @@ export class GoogleComponent implements OnInit {
       error: (err) => {
         this.editBudgetSubmitting = false;
         this.snackBar.open(err?.error?.error || err?.message || 'Failed to update budget', 'Close', { duration: 4000 });
+      },
+    });
+  }
+
+  // --- Campaign schedule (start / end dates) ---
+
+  /** Today in the Ads account time zone when known, otherwise the browser's local date. */
+  private today(): string {
+    return this.accountToday || this.dateToString(new Date());
+  }
+
+  /**
+   * Serving state derived from the flight dates. Google keeps `status` as ENABLED on a campaign whose
+   * end date has passed, so status alone would show an ended campaign as running.
+   */
+  campaignScheduleState(c: GoogleCampaign): 'ended' | 'scheduled' | 'running' {
+    const today = this.today();
+    if (c.endDate && c.endDate < today) return 'ended';
+    if (c.startDate && c.startDate > today) return 'scheduled';
+    return 'running';
+  }
+
+  isCampaignEnded(c: GoogleCampaign): boolean {
+    return this.campaignScheduleState(c) === 'ended';
+  }
+
+  campaignStatusLabel(c: GoogleCampaign): string {
+    const state = this.campaignScheduleState(c);
+    if (state === 'ended') return 'ENDED';
+    if (state === 'scheduled' && c.status === 'ENABLED') return 'SCHEDULED';
+    return c.status;
+  }
+
+  openCampaignSchedule(c: GoogleCampaign) {
+    if (!c?.id) return;
+    const today = this.today();
+    this.showCampaignScheduleModal = true;
+    this.scheduleCampaignId = c.id;
+    this.scheduleCampaignName = c.name || c.id;
+    this.scheduleStartDate = c.startDate || '';
+    this.scheduleEndDate = c.endDate || '';
+    this.scheduleNoEndDate = !c.endDate;
+    this.scheduleStartLocked = !!c.startDate && c.startDate <= today;
+    this.scheduleIsRestart = this.isCampaignEnded(c);
+    this.scheduleSubmitting = false;
+  }
+
+  closeCampaignScheduleModal() {
+    this.showCampaignScheduleModal = false;
+    this.scheduleSubmitting = false;
+  }
+
+  /** Earliest date the user may pick: Google rejects any date moved into the past. */
+  get scheduleMinDate(): string {
+    return this.today();
+  }
+
+  submitCampaignSchedule() {
+    const id = this.scheduleCampaignId?.trim();
+    if (!id) return;
+    const today = this.today();
+    const body: { startDate?: string; endDate?: string; clearEndDate?: boolean; enable?: boolean } = {};
+
+    if (!this.scheduleStartLocked) {
+      const start = this.scheduleStartDate?.trim();
+      if (start) {
+        if (start < today) {
+          this.snackBar.open('Start date cannot be in the past', 'Close', { duration: 3000 });
+          return;
+        }
+        body.startDate = start;
+      }
+    }
+
+    if (this.scheduleNoEndDate) {
+      body.clearEndDate = true;
+    } else {
+      const end = this.scheduleEndDate?.trim();
+      if (!end) {
+        this.snackBar.open('Pick an end date or choose to run indefinitely', 'Close', { duration: 3000 });
+        return;
+      }
+      if (end < today) {
+        this.snackBar.open('End date cannot be in the past', 'Close', { duration: 3000 });
+        return;
+      }
+      const start = body.startDate || this.scheduleStartDate?.trim();
+      if (start && end < start) {
+        this.snackBar.open('End date cannot be before the start date', 'Close', { duration: 3000 });
+        return;
+      }
+      body.endDate = end;
+    }
+
+    if (this.scheduleIsRestart) body.enable = true;
+
+    this.scheduleSubmitting = true;
+    this.googleAdsService.updateCampaignSchedule(id, body).subscribe({
+      next: (res) => {
+        this.scheduleSubmitting = false;
+        if (res.success) {
+          this.snackBar.open(this.scheduleIsRestart ? 'Campaign restarted' : 'Campaign dates updated', 'Close', {
+            duration: 3000,
+          });
+          this.closeCampaignScheduleModal();
+          this.loadCampaigns();
+        } else {
+          this.snackBar.open((res as any).error || 'Failed to update dates', 'Close', { duration: 5000 });
+        }
+      },
+      error: (err) => {
+        this.scheduleSubmitting = false;
+        this.snackBar.open(err?.error?.error || err?.message || 'Failed to update dates', 'Close', { duration: 5000 });
       },
     });
   }
